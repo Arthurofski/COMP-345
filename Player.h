@@ -17,12 +17,10 @@ public:
     Player(const Player& other);
     Player& operator=(const Player& other);
     
-    // Declare operator<< but DON'T implement it inline
     friend std::ostream& operator<<(std::ostream& out, const Player& p);
     
     ~Player();
 
-    // Getters returning pointers
     std::string* getName() const;
     std::vector<Territory*>* getTerritories() const;
     Hand* getHand() const;

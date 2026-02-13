@@ -38,6 +38,12 @@ Player::~Player() {
     delete territories;
     delete hand;
     delete orders;
+
+    // Avoid dangling pointers
+    name = nullptr;
+    territories = nullptr;
+    hand = nullptr;
+    orders = nullptr;
 }
 
 // Stream insertion

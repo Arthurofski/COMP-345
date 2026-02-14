@@ -58,8 +58,9 @@ int main() {
     for (Territory* t : *attack1) {
         std::cout << t->getName() << " ";
     }
-    std::cout << std::endl;
-    // toAttack() creates new Territory objects, so delete them before deleting the vector
+    std::cout << std::endl;\
+    
+    // creates new Territory objects (for this demo only, will be changed later), so delete them before deleting the vector
     for (Territory* t : *attack1) {
         delete t;
     }
@@ -72,7 +73,8 @@ int main() {
         std::cout << t->getName() << " ";
     }
     std::cout << std::endl;
-    // toAttack() creates new Territory objects, so delete them before deleting the vector
+    
+    // creates new Territory objects (for this demo only, will be changed later), so delete them before deleting the vector
     for (Territory* t : *attack2) {
         delete t;
     }

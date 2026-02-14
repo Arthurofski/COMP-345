@@ -12,8 +12,6 @@ int main() {
     std::cout << "Created: " << *(player1->getName()) << std::endl;
     std::cout << "Created: " << *(player2->getName()) << std::endl;
     
-    std::cout << "\nTerritory Ownership:" << std::endl;
-    
     // Create territories
     Territory* t1 = new Territory("Canada");
     Territory* t2 = new Territory("USA");
@@ -132,8 +130,9 @@ int main() {
     std::cout << "\nStream insertion operator:" << std::endl;
     std::cout << "\n" << *player1 << std::endl;
     std::cout << "\n" << *player2 << std::endl;
-
-    // Delete players and territories and free memory
+    
+    // Cleanup - delete heap allocations and set pointers to nullptr
+    
     delete player1;
     player1 = nullptr;
     

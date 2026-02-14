@@ -69,12 +69,13 @@ void Player::addTerritory(Territory* t) {
 
 // Next methods are arbitrary implementations 
 // Defend method
+// Arbitrary implementation - returns all owned territories to defend
 std::vector<Territory*>* Player::toDefend() {
     std::vector<Territory*>* result = new std::vector<Territory*>();
     
-    // Return first territory if exists
-    if (!territories->empty()) {
-        result->push_back((*territories)[0]);
+    // Return all owned territories to defend
+    for (Territory* t : *territories) {
+        result->push_back(t);
     }
     
     return result;

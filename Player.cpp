@@ -8,7 +8,7 @@ Player::Player(std::string n) {
     orders = new OrderList();
 }
 
-// Copy constructor
+// Copy constructor (deep copy)
 Player::Player(const Player& other) {
     name = new std::string(*(other.name));
     territories = new std::vector<Territory*>(*(other.territories));
@@ -36,14 +36,15 @@ Player& Player::operator=(const Player& other) {
 Player::~Player() {
     delete name;
     delete territories;
-    delete hand;
-    delete orders;
-
-    // Avoid dangling pointers
+    delete hand;         
+    delete orders;       
+    
+    // Set to nullptr to prevent dangling pointers
     name = nullptr;
     territories = nullptr;
     hand = nullptr;
     orders = nullptr;
+    
 }
 
 // Stream insertion
@@ -66,7 +67,7 @@ void Player::addTerritory(Territory* t) {
     territories->push_back(t);
 }
 
-// Next methods are arbirtrary implementations 
+// Next methods are arbitrary implementations 
 // Defend method
 std::vector<Territory*>* Player::toDefend() {
     std::vector<Territory*>* result = new std::vector<Territory*>();
@@ -84,8 +85,8 @@ std::vector<Territory*>* Player::toAttack() {
     std::vector<Territory*>* result = new std::vector<Territory*>();
     
     // Create a dummy territory to attack
-    Territory* dummy = new Territory("DummyEnemyTerritory");
-    result->push_back(dummy);
+    Territory* test = new Territory("DummyEnemyTerritory");
+    result->push_back(test);
     
     return result;
 }

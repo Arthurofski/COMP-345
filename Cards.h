@@ -1,6 +1,11 @@
+#ifndef CARDS_H 
+#define CARDS_H
+
+
 #include <iostream>
 #include <vector>
-
+#include "Player.h"
+#include "Orders.h"
 using namespace std;
 
 class Cards;
@@ -22,7 +27,7 @@ class Cards{
     friend ostream &operator<<(ostream &out, const Cards &card);
 
     void getCardType();
-    void play(Hand* hand, Deck* deck);
+    void play(Hand* hand, Deck* deck, Player* player);
 
 };
 
@@ -65,3 +70,6 @@ class Hand{
         vector<Cards*>* getCards() { return &cardsInHand; }
 
 };
+
+
+#endif //CARDS_H

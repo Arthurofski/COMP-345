@@ -49,12 +49,29 @@ void Cards::getCardType(){
     cout << *cardType << endl;
 }
 
-void Cards::play(Hand* hand, Deck* deck){
+void Cards::play(Hand* hand, Deck* deck, Player* player){
     if(!hand){
         cerr<<"Hand pointer is null, cannot play card. " << endl;
         return;
     }
     cout << "Playing card: " << *cardType << endl;
+    Order *order = nullptr;
+    switch(*cardType){
+        //Assuming these order classes weill be implemented
+        // case BOMB:
+        //     order = new BombOrder();
+        //     break;
+        // case BLOCKADE:
+        //     order = new BlockadeOrder();
+        //     break;
+        // case AIRLIFT:
+        //     order = new AirliftOrder();
+        //     break;
+        default:
+            cout << "Card type not implemented yet" << endl;
+            return;
+    }
+    player->getOrders()->add(order);
     hand->removeCard(this);
     deck->addCard(this);
 

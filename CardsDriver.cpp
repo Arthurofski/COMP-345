@@ -8,7 +8,7 @@ using namespace std;
 void cardsTest(){
     Deck* deck = new Deck(42);
     Hand* hand1 = new Hand();
-    
+    Player* player1 = new Player("Player 1");
 
     deck->draw(hand1);
     deck->draw(hand1);
@@ -18,7 +18,7 @@ void cardsTest(){
     // cout << *hand1 << endl;
 
     for(int i = 0; i<hand1->getNumCards();i++){
-        hand1->getCards()->at(i)->play(hand1,deck);
+        hand1->getCards()->at(i)->play(hand1,deck, player1);
     }
     
 
@@ -30,6 +30,9 @@ void cardsTest(){
 
     delete hand1;
     hand1= nullptr;
+
+    delete player1; 
+    player1 = nullptr;
 
 
 }

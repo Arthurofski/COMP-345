@@ -14,15 +14,16 @@ void cardsTest(){
     deck->draw(hand1);
     deck->draw(hand1);
 
-    cout << *hand1 << endl;
+    // cout << *deck << endl;
+    // cout << *hand1 << endl;
 
     for(int i = 0; i<hand1->getNumCards();i++){
         hand1->getCards()->at(i)->play(hand1,deck);
     }
     
 
-    cout << *deck << endl;
-    cout << *hand1 << endl;
+    // cout << *deck << endl;
+    // cout << *hand1 << endl;
 
     delete deck;
     deck = nullptr;

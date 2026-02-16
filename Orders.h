@@ -3,6 +3,8 @@
 
 #include <vector>
 #include <string>
+#include <ostream>
+
 
 
 class Order {
@@ -16,18 +18,15 @@ public:
     Order& operator=(const Order& other);
     virtual ~Order();
 
-    std::string getDescription() const { return *_description; }
-    void setDescription(std::string description) { *_description = description; }
+    std::string getDescription() const;
+    void setDescription(std::string description);
 
-    // Polymorphic copy
+    // Polymorphic cloning (virtual constructor) for deep copying via base class pointer.
     virtual Order* clone() const = 0;
 
-    // Core behavior
+    // Validation and execution are separate steps; execute should only do something if validate() returns true.
     virtual bool validate() const = 0;
     virtual void execute() = 0;
-
-    // Accessors
-    std::string getDescription() const;
 };
 /**
  * Stream insertion for any Order (polymorphic).
@@ -45,10 +44,10 @@ public:
     Deploy& operator=(const Deploy& other);
     ~Deploy() override;
     
-    int getArmies() const { return *_armies; }
-    std::string getTargetTerritoryName() const { return *_targetTerritoryName; }
-    void setArmies(int armies) { *_armies = armies; }
-    void setTargetTerritoryName(std::string targetTerritoryName) { *_targetTerritoryName = targetTerritoryName; }
+    int getArmies() const;
+    std::string getTargetTerritoryName() const;
+    void setArmies(int armies);
+    void setTargetTerritoryName(std::string targetTerritoryName);
 
     Order* clone() const override;
     bool validate() const override;
@@ -169,4 +168,4 @@ public:
 };
 
 std::ostream& operator<<(std::ostream& os, const OrdersList& list);
-#endif // ORDERS_H
+#endif

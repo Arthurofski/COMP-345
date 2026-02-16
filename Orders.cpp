@@ -2,8 +2,10 @@
 #include <iostream>
 using namespace std;
 
-Order::Order()
-    : _description(new std::string("Order")){}
+Order::Order(){
+    _description = new std::string("");
+}
+    
 
 Order::Order(const std::string description)
     : _description(new std::string(description)){}
@@ -21,6 +23,8 @@ Order::~Order() {
     delete _description;
 }
 std::string Order::getDescription() const { return *_description; }
+void Order::setDescription(std::string description) { *_description = description; }
+
 
 std::ostream& operator<<(std::ostream& os, const Order& order) {
     os << order.getDescription();
@@ -129,6 +133,12 @@ Deploy::~Deploy() {
     delete _armies;
     delete _targetTerritoryName;
 }
+
+int Deploy::getArmies() const { return *_armies; }
+std::string Deploy::getTargetTerritoryName() const { return *_targetTerritoryName; }
+void Deploy::setArmies(int armies) { *_armies = armies; }
+void Deploy::setTargetTerritoryName(std::string targetTerritoryName) { *_targetTerritoryName = targetTerritoryName; }
+
 
 Order* Deploy::clone() const { return new Deploy(*this); }
 

@@ -45,6 +45,8 @@ public:
     //Part 3 methods
     //Reinforcement phase method
     void reinforcementPhase();
+    void issueOrdersPhase();
+    void executeOrdersPhase();
     //main game loop method containing the 3 phases
     void mainGameLoop(int turns);
 

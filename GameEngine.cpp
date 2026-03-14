@@ -163,3 +163,21 @@ std::ostream& operator<<(std::ostream& os, const GameEngine& engine) {
     os << "GameEngine State: " << stateToString(*engine.currentState);
     return os;
 }
+
+void GameEngine::addPlayer(const std::string& playerName){
+    if(players->size() >=6){
+        std::cout << "Maximum amount of players reached.\n";
+    }else{
+        players->push_back(new Player(playerName));
+        std::cout << "Player " << playerName << " added\n";
+    }
+}
+
+void GameEngine::reinforcementPhase(){
+    std::cout << "Reinforcement phase has begun \n";
+    
+}
+void GameEngine::mainGameLoop(int turns){
+    int round = 1;
+    int numPlayersLeft = players->size();
+}

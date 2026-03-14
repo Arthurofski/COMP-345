@@ -3,6 +3,13 @@
 
 #include <string>
 #include <iostream>
+#include <vector>
+
+#include "Cards.h"
+#include "Orders.h"
+
+class Player;
+
 
 // Enum to represent the different states of the game engine
 enum state{
@@ -33,6 +40,13 @@ public:
 
     // Main functions
     bool stateValidation(const std::string& command);
+    void addPlayer(const std::string& playerName); //adds players to the game (max 6)
+
+    //Part 3 methods
+    //Reinforcement phase method
+    void reinforcementPhase();
+    //main game loop method containing the 3 phases
+    void mainGameLoop(int turns);
 
     // Getter for the current state
     std::string getCurrentState();
@@ -40,9 +54,9 @@ public:
 private:
     // currentState pointer
     state* currentState;
-
+    std::vector<Player*>* players;
     // Setter for the current state
     void setState(state newState);
 };
 
-#endif
+#endif //GAMEENGINE_H

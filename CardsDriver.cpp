@@ -1,38 +1,67 @@
 #include "Cards.h"
+#include "Orders.h"
+#include "Map.h"
 #include <iostream>
-#include <random>
-#include <vector>
 
 using namespace std;
 
-void cardsTest(){
-    Deck* deck = new Deck(42);
-    Hand* hand1 = new Hand();
-    Player* player1 = new Player("Player 1");
+/**
+ * CardsDriver: demonstrates the Deck and Hand classes, with Cards::play()
+ * creating real Orders that land in the player's real OrdersList.
+ */
+int main() {
+    cout << "===== Cards Driver Demo =====" << endl;
 
-    deck->draw(hand1);
-    deck->draw(hand1);
-    deck->draw(hand1);
+    // Build a minimal map so the player has real territories
+    Territory* alaska  = new Territory("Alaska");
+    Territory* ontario = new Territory("Ontario");
+    Continent* na      = new Continent("NorthAmerica", 5);
+    alaska->setContinent(na);
+    ontario->setContinent(na);
+    alaska->addNeighbour(ontario);
+    ontario->addNeighbour(alaska);
 
-    // cout << *deck << endl;
-    // cout << *hand1 << endl;
+    // Create a player and assign territories
+    Player* player = new Player("CardPlayer");
+    player->addTerritory(alaska);
+    player->addTerritory(ontario);
 
-    for(int i = 0; i<hand1->getNumCards();i++){
-        hand1->getCards()->at(i)->play(hand1,deck, player1);
+    // Create a full deck (one of each type, cycling through 5 types)
+    Deck* deck = new Deck(5);
+    Hand* hand = new Hand();
+
+    cout << "\nInitial deck:\n" << *deck << endl;
+
+    // Draw all 5 cards into hand
+    cout << "Drawing 5 cards from deck into hand..." << endl;
+    for (int i = 0; i < 5; i++) deck->draw(hand);
+
+    cout << "\nDeck after drawing:\n" << *deck << endl;
+    cout << "Hand after drawing:\n" << *hand << endl;
+
+    // Play all cards — each creates a real Order in player's OrdersList,
+    // then the card moves back to the deck.
+    cout << "\nPlaying all cards from hand:" << endl;
+    vector<Cards*> toPlay(*hand->getCards());
+    for (Cards* card : toPlay) {
+        card->play(hand, deck, player);
     }
-    
 
-    // cout << *deck << endl;
-    // cout << *hand1 << endl;
+    cout << "\nDeck after playing (cards returned):\n" << *deck << endl;
+    cout << "Hand after playing (should be empty):\n" << *hand << endl;
+    cout << "\nPlayer's OrdersList after playing all cards:\n"
+         << *player->getOrders() << endl;
 
+    // Cleanup — clear territory vector before deleting player so ~Player
+    // doesn't hold dangling pointers to stack-freed territories.
+    player->getTerritories()->clear();
+    delete player;
+    delete hand;
     delete deck;
-    deck = nullptr;
+    delete alaska;
+    delete ontario;
+    delete na;
 
-    delete hand1;
-    hand1= nullptr;
-
-    delete player1; 
-    player1 = nullptr;
-
-
+    cout << "===== Cards Driver Done =====" << endl;
+    return 0;
 }

@@ -1,159 +1,133 @@
 #include "Player.h"
+#include "Cards.h"
+#include "Orders.h"
+#include "Map.h"
 #include <iostream>
 
+/**
+ * PlayerDriver: demonstrates the Player class interacting with the real
+ * Map (Territory), Hand (Cards.h), and OrdersList (Orders.h).
+ */
 int main() {
-    std::cout << "----- Player Driver Demo -----" << std::endl;
-    
-    // Create Players
-    std::cout << "\nCreating players:" << std::endl;
-    Player* player1 = new Player("Bob");
-    Player* player2 = new Player("John");
-    
-    std::cout << "Created: " << *(player1->getName()) << std::endl;
-    std::cout << "Created: " << *(player2->getName()) << std::endl;
-    
-    // Create territories
-    Territory* t1 = new Territory("Canada");
-    Territory* t2 = new Territory("USA");
-    Territory* t3 = new Territory("China");
-    Territory* t4 = new Territory("Russia");
-    
-    // Assign territories to players
-    player1->addTerritory(t1);
-    player1->addTerritory(t2);
-    player2->addTerritory(t3);
-    player2->addTerritory(t4);
-    
-    // Player owns a Hand of cards
-    std::cout << "\nHand Ownership:" << std::endl;
-    std::cout << "Player1 hand: " << *(player1->getHand()) << std::endl;
-    std::cout << "Player2 hand: " << *(player2->getHand()) << std::endl;
-    
-    // toDefend() method
-    std::cout << "\ntoDefend() method:" << std::endl;
-    
+    std::cout << "===== Player Driver Demo =====" << std::endl;
+
+    // ---- Build a small map manually ----
+    // Two continents, four territories, with adjacency between them.
+    //
+    //  [NorthAmerica]          [Asia]
+    //   Canada -- USA   |   China -- Russia
+    //      \________________/
+    //        (cross-continent edge)
+
+    Continent* northAmerica = new Continent("NorthAmerica", 5);
+    Continent* asia         = new Continent("Asia", 7);
+
+    Territory* canada = new Territory("Canada");
+    Territory* usa    = new Territory("USA");
+    Territory* china  = new Territory("China");
+    Territory* russia = new Territory("Russia");
+
+    // Assign territories to continents
+    canada->setContinent(northAmerica);
+    usa->setContinent(northAmerica);
+    china->setContinent(asia);
+    russia->setContinent(asia);
+
+    // Set up adjacency (bidirectional)
+    canada->addNeighbour(usa);
+    usa->addNeighbour(canada);
+    china->addNeighbour(russia);
+    russia->addNeighbour(china);
+    // Cross-continent edge so the map is a single connected graph
+    usa->addNeighbour(china);
+    china->addNeighbour(usa);
+
+    // ---- Create Players ----
+    Player* player1 = new Player("Alice");
+    Player* player2 = new Player("Bob");
+
+    // Assign territories — addTerritory also sets territory->owner
+    player1->addTerritory(canada);
+    player1->addTerritory(usa);
+    player2->addTerritory(china);
+    player2->addTerritory(russia);
+
+    std::cout << "\nPlayers created and territories assigned." << std::endl;
+
+    // ---- Hand ownership (draw cards from a shared deck) ----
+    Deck* deck = new Deck(10);
+    deck->draw(player1->getHand());
+    deck->draw(player1->getHand());
+    deck->draw(player2->getHand());
+    deck->draw(player2->getHand());
+
+    std::cout << "\nHands after drawing:" << std::endl;
+    std::cout << "  " << *player1->getName() << ": " << *player1->getHand() << std::endl;
+    std::cout << "  " << *player2->getName() << ": " << *player2->getHand() << std::endl;
+
+    // ---- toDefend() ----
+    std::cout << "\ntoDefend():" << std::endl;
     std::vector<Territory*>* defend1 = player1->toDefend();
-    std::cout << "Player1 territories to defend: ";
-    for (Territory* t : *defend1) {
-        std::cout << t->getName() << " ";
-    }
+    std::cout << "  " << *player1->getName() << " defends: ";
+    for (Territory* t : *defend1) std::cout << t->getName() << " ";
     std::cout << std::endl;
     delete defend1;
-    defend1 = nullptr;
-    
-    std::vector<Territory*>* defend2 = player2->toDefend();
-    std::cout << "Player2 territories to defend: ";
-    for (Territory* t : *defend2) {
-        std::cout << t->getName() << " ";
-    }
-    std::cout << std::endl;
-    delete defend2;
-    defend2 = nullptr;
-    
-    // toAttack() method
-    std::cout << "\ntoAttack() method:" << std::endl;
-    
+
+    // ---- toAttack() — now uses real map neighbours ----
+    std::cout << "\ntoAttack() (real map neighbours not owned by this player):" << std::endl;
     std::vector<Territory*>* attack1 = player1->toAttack();
-    std::cout << "Player1 territories to attack: ";
-    for (Territory* t : *attack1) {
-        std::cout << t->getName() << " ";
-    }
-    std::cout << std::endl;\
-    
-    // creates new Territory objects (for this demo only, will be changed later), so delete them before deleting the vector
-    for (Territory* t : *attack1) {
-        delete t;
-    }
-    delete attack1;
-    attack1 = nullptr;
-    
-    std::vector<Territory*>* attack2 = player2->toAttack();
-    std::cout << "Player2 territories to attack: ";
-    for (Territory* t : *attack2) {
-        std::cout << t->getName() << " ";
-    }
+    std::cout << "  " << *player1->getName() << " can attack: ";
+    for (Territory* t : *attack1) std::cout << t->getName() << " ";
     std::cout << std::endl;
-    
-    // creates new Territory objects (for this demo only, will be changed later), so delete them before deleting the vector
-    for (Territory* t : *attack2) {
-        delete t;
-    }
-    delete attack2;
-    attack2 = nullptr;
-    
-    // issueOrder() method
-    std::cout << "\nissueOrder() method:" << std::endl;
-    
-    std::cout << "Player1 issuing orders:" << std::endl;
+    delete attack1; // do NOT delete the Territory pointers — they belong to the map
+
+    // ---- issueOrder() ----
+    std::cout << "\nissueOrder() (creates a real Deploy order):" << std::endl;
     player1->issueOrder();
-    
-    std::cout << "Player2 issuing orders:" << std::endl;
+    player1->issueOrder();
     player2->issueOrder();
-    
-    std::cout << "\nPlayer1 orders: " << *(player1->getOrders()) << std::endl;
-    std::cout << "Player2 orders: " << *(player2->getOrders()) << std::endl;
 
-    // Copy constructor
-    std::cout << "\nTest copy constructor:" << std::endl;
+    std::cout << "\nPlayer1's OrdersList:" << std::endl;
+    std::cout << *player1->getOrders() << std::endl;
 
+    // ---- Copy constructor ----
+    std::cout << "Copy constructor test:" << std::endl;
     Player player1Copy = *player1;
-    std::cout << "Created copy of " << *(player1->getName()) << std::endl;
-    std::cout << "Copy name: " << *(player1Copy.getName()) << std::endl;
-    
-    // Verify copy has same territories
-    std::vector<Territory*>* copyTerritories = player1Copy.getTerritories();
-    std::cout << "Copy has " << copyTerritories->size() << " territories: ";
-    for (Territory* t : *copyTerritories) {
-        std::cout << t->getName() << " ";
-    }
+    std::cout << "  Original: " << *player1->getName()
+              << " | Copy: "    << *player1Copy.getName() << std::endl;
+    std::cout << "  Copy territories (" << player1Copy.getTerritories()->size() << "): ";
+    for (Territory* t : *player1Copy.getTerritories()) std::cout << t->getName() << " ";
     std::cout << std::endl;
-    
-    // Assignment Operator
-    std::cout << "\nTest assignment operator:" << std::endl;
-    
-    // Create a temporary player and assign player2 to it
+
+    // ---- Assignment operator ----
+    std::cout << "\nAssignment operator test:" << std::endl;
     Player player3("TempPlayer");
-    std::cout << "Before assignment: " << *(player3.getName()) << std::endl;
-    
     player3 = *player2;
-    std::cout << "After assignment: " << *(player3.getName()) << std::endl;
-    
-    // Verify assigned player has same territories
-    std::vector<Territory*>* assignedTerritories = player3.getTerritories();
-    std::cout << "Assigned player has " << assignedTerritories->size() << " territories: ";
-    for (Territory* t : *assignedTerritories) {
-        std::cout << t->getName() << " ";
-    }
+    std::cout << "  After assignment, name: " << *player3.getName() << std::endl;
+    std::cout << "  Territories (" << player3.getTerritories()->size() << "): ";
+    for (Territory* t : *player3.getTerritories()) std::cout << t->getName() << " ";
     std::cout << std::endl;
 
-    // player1Copy and player3 are stack allocated, so will be deleted automatically after
-    
-    // Stream Insertion Operator
+    // ---- Stream insertion operator ----
     std::cout << "\nStream insertion operator:" << std::endl;
-    std::cout << "\n" << *player1 << std::endl;
-    std::cout << "\n" << *player2 << std::endl;
-    
-    // Cleanup - delete heap allocations and set pointers to nullptr
-    
+    std::cout << *player1 << std::endl;
+    std::cout << *player2 << std::endl;
+
+    // ---- Cleanup ----
+    // Territory pointers were allocated here (not by a Map), so delete them manually.
+    // Clear player territory vectors first so ~Player doesn't dangle.
+    player1->getTerritories()->clear();
+    player2->getTerritories()->clear();
+    player1Copy.getTerritories()->clear();
+    player3.getTerritories()->clear();
+
     delete player1;
-    player1 = nullptr;
-    
     delete player2;
-    player2 = nullptr;
-    
-    delete t1;
-    t1 = nullptr;
+    delete deck;
 
-    delete t2;
-    t2 = nullptr;
+    delete canada; delete usa; delete china; delete russia;
+    delete northAmerica; delete asia;
 
-    delete t3;
-    t3 = nullptr;
-
-    delete t4;
-    t4 = nullptr;
-    
-    std::cout << "\n----- Demo finished -----" << std::endl;
-    
+    std::cout << "\n===== Player Driver Done =====" << std::endl;
     return 0;
 }

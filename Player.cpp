@@ -1,11 +1,13 @@
 #include "Player.h"
+#include "Cards.h"
+#include "Orders.h"
 
 // Constructor
 Player::Player(std::string n) {
     name = new std::string(n);
     territories = new std::vector<Territory*>();
     hand = new Hand();
-    orders = new OrderList();
+    orders = new OrdersList();
 }
 
 // Copy constructor (deep copy)
@@ -13,7 +15,7 @@ Player::Player(const Player& other) {
     name = new std::string(*(other.name));
     territories = new std::vector<Territory*>(*(other.territories));
     hand = new Hand(*(other.hand));
-    orders = new OrderList(*(other.orders));
+    orders = new OrdersList(*(other.orders));
 }
 
 // Assignment operator
@@ -27,7 +29,7 @@ Player& Player::operator=(const Player& other) {
         name = new std::string(*(other.name));
         territories = new std::vector<Territory*>(*(other.territories));
         hand = new Hand(*(other.hand));
-        orders = new OrderList(*(other.orders));
+        orders = new OrdersList(*(other.orders));
     }
     return *this;
 }
@@ -52,7 +54,7 @@ std::ostream& operator<<(std::ostream& out, const Player& p) {
     out << "Player: " << *(p.name) << std::endl;
     out << "  Territories: " << p.territories->size() << std::endl;
     out << "  Hand: " << *(p.hand) << std::endl;
-    out << "  Orders: " << *(p.orders);
+    out << "  Orders: " << *p.orders;
     return out;
 }
 
@@ -60,7 +62,7 @@ std::ostream& operator<<(std::ostream& out, const Player& p) {
 std::string* Player::getName() const { return name; }
 std::vector<Territory*>* Player::getTerritories() const { return territories; }
 Hand* Player::getHand() const { return hand; }
-OrderList* Player::getOrders() const { return orders; }
+OrdersList* Player::getOrders() const { return orders; }
 
 // Add territory
 void Player::addTerritory(Territory* t) {
@@ -84,17 +86,31 @@ std::vector<Territory*>* Player::toDefend() {
 // Attack method
 std::vector<Territory*>* Player::toAttack() {
     std::vector<Territory*>* result = new std::vector<Territory*>();
-    
-    // Create a dummy territory to attack
-    Territory* test = new Territory("DummyEnemyTerritory");
-    result->push_back(test);
+    //attack implementation 
+    for (Territory* owned : *territories) {
+        for (Territory* neighbour : *owned->neighbours) {
+            // Only include territories not owned by this player
+            if (neighbour->owner != this) {
+                // Avoid duplicates
+                bool already = false;
+                for (Territory* r : *result) {
+                    if (r == neighbour) { already = true; break; }
+                }
+                if (!already) result->push_back(neighbour);
+            }
+        }
+    }
     
     return result;
 }
 
-// Issue Order method 
+/**
+ * issueOrder: creates a Deploy order targeting the player's first territory
+ * and adds it to the player's OrdersList.
+ */
 void Player::issueOrder() {
-    Order* order = new Order();
+    std::string target = territories->empty() ? "NoTerritory" : territories->front()->getName();
+    Order* order = new Deploy(1, target);
     orders->add(order);
-    std::cout << "Order issued." << std::endl;
+    std::cout << "Order issued: Deploy to " << target << std::endl;
 }

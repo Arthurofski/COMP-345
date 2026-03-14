@@ -164,8 +164,8 @@ public:
     int size() const;
     const Order* get(int index) const;
 
+    friend std::ostream& operator<<(std::ostream& os, const OrdersList& list);
 
 };
 
-std::ostream& operator<<(std::ostream& os, const OrdersList& list);
 #endif

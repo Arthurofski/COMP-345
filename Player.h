@@ -4,41 +4,14 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
+#include "Map.h"
 // For Assignment 1, using placeholder classes
 // Unfinished classes for compilation only
+class Hand;
+class OrdersList;
+class Order;
+class Territory;
 
-class Territory {
-public:
-    Territory(std::string name) : name(name) {}
-    std::string getName() const { return name; }
-private:
-    std::string name;
-};
-
-class Hand {
-public:
-    Hand() {}
-    friend std::ostream& operator<<(std::ostream& out, const Hand& h) {
-        out << "[Hand placeholder]";
-        return out;
-    }
-};
-
-class OrderList {
-public:
-    OrderList() {}
-    void add(class Order* order) { /* placeholder */ }
-    friend std::ostream& operator<<(std::ostream& out, const OrderList& ol) {
-        out << "[OrderList placeholder]";
-        return out;
-    }
-};
-
-class Order {
-public:
-    Order() {}
-};
 
 
 // actual Player class
@@ -58,7 +31,7 @@ public:
     std::string* getName() const;
     std::vector<Territory*>* getTerritories() const;
     Hand* getHand() const;
-    OrderList* getOrders() const;
+    OrdersList* getOrders() const;
 
     void addTerritory(Territory* t);
 
@@ -66,7 +39,7 @@ private:
     std::string* name;
     std::vector<Territory*>* territories;
     Hand* hand;
-    OrderList* orders;
+    OrdersList* orders;
 };
 
 #endif

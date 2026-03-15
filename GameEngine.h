@@ -11,6 +11,8 @@
 #include "Orders.h"
 #include "Player.h"
 #include "Map.h"
+#include "LoggingObserver.h"
+#include "CommandProcessing.h"
 
 class Player;
 
@@ -41,7 +43,7 @@ public:
     ~GameEngine();
     GameEngine& operator=(const GameEngine& other);
     friend std::ostream& operator<<(std::ostream& os, const GameEngine& engine);
-
+    std::string stringToLog() const;
     // Main functions
     bool stateValidation(const std::string& command);
 

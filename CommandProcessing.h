@@ -7,6 +7,8 @@
 #include "GameEngine.h"
 using namespace std;
 
+class GameEngine;
+
 // Command class declaration
 class Command {
 private:
@@ -37,4 +39,4 @@ class FileCommandProcessorAdapter {
 
 };
 
-#endif
+#endif //COMMANDPROCESSING_H

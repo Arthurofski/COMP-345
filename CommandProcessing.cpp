@@ -23,7 +23,7 @@ void Command::saveEffect(string effect) {
 CommandProcessor::CommandProcessor() {}
 
 // Reads command, validates it, then creates a command object and saves it in the command list
-string CommandProcessor::readCommand(GameEngine* ge) {
+std::string CommandProcessor::readCommand(GameEngine* ge) {
 	std::string line, cmd;
     while (true) {
         std::cout << "[" << ge->getCurrentState() << "] > ";
@@ -55,6 +55,7 @@ string CommandProcessor::readCommand(GameEngine* ge) {
 		std::cout << "Quitting game...\n";
 		exit(0);
 	}
+	return "";
 }
 
 // Saves a command object in the command list

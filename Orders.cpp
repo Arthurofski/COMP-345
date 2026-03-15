@@ -26,6 +26,10 @@ Order::~Order() {
 std::string Order::getDescription() const { return *_description; }
 void Order::setDescription(std::string description) { *_description = description; }
 
+// Method to convert an order's description to a string for logging purposes
+string Order::stringToLog() const {
+    return "Order executed: " + *_description;
+}
 
 std::ostream& operator<<(std::ostream& os, const Order& order) {
     os << order.getDescription();
@@ -55,6 +59,7 @@ OrdersList::~OrdersList() {
 void OrdersList::add(Order* order) {
     if (!order) return;
     _orders->push_back(order);
+    notify(this); // Notify observers that a new order has been added
 }
 
 bool OrdersList::remove(int index) {
@@ -105,7 +110,10 @@ std::ostream& operator<<(std::ostream& os, const OrdersList& list) {
     return os;
 }
 
-
+// method to convert an orders list to a string for logging purposes
+string OrdersList::stringToLog() const {
+    return "Order Issued and added to list";
+}
 
 Deploy::Deploy()
     : Order("Deploy"),
@@ -158,6 +166,7 @@ bool Deploy::validate() const {
 }
 
 void Deploy::execute() {
+    notify(this);  // Log execution attempt (valid or invalid)
     if (!validate()) {
         cout << "Invalid Deploy order." << endl;
         return;

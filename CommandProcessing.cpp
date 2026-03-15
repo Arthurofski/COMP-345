@@ -15,8 +15,13 @@ Command::Command(string command) {
 // Method to save a command's effect to its command object
 void Command::saveEffect(string effect) {
 	this->effect = effect;
+	notify(this); // Notify observers with the current command object
 }
 
+// Method to convert a command's effect to a string for logging purposes
+string Command::stringToLog() const {
+	return "Effect: " + effect;
+}
 
 // ----------------------COMMAND PROCESSOR CLASS IMPLEMENTATION------------------------
 
@@ -64,4 +69,9 @@ bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 		return true;
 		
 	return false;
+}
+
+// Method to convert a command's effect to a string for logging purposes
+string CommandProcessor::stringToLog() const {
+	return "Command saved to list";
 }

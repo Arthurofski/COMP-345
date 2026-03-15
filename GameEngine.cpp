@@ -88,6 +88,7 @@ bool GameEngine::stateValidation(const std::string& command) {
         // Start, can only move to MapLoaded
         case Start:
             if (command == "loadmap") {
+                notify(this);
                 setState(MapLoaded);
                 return true;
             } else {
@@ -97,9 +98,11 @@ bool GameEngine::stateValidation(const std::string& command) {
         // MapLoaded, can move to MapValidated or stay in MapLoaded
         case MapLoaded:
             if (command == "loadmap") {
+                notify(this);
                 return true;
             } else if (command == "validatemap") {
                 setState(MapValidated);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in MapLoaded state. Only allows loadmap or validatemap." << std::endl;
@@ -109,6 +112,7 @@ bool GameEngine::stateValidation(const std::string& command) {
         case MapValidated:
             if (command == "addplayer") {
                 setState(PlayersAdded);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in MapValidated state. Only allows addplayer." << std::endl;
@@ -117,9 +121,11 @@ bool GameEngine::stateValidation(const std::string& command) {
         // PlayersAdded, can move to AssignReinforcement or stay in PlayersAdded
         case PlayersAdded:
             if (command == "addplayer") {
+                notify(this);
                 return true;
             } else if (command == "assigncountries") {
                 setState(AssignReinforcement);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in PlayersAdded state. Only allows addplayer or assigncountries." << std::endl;
@@ -129,6 +135,7 @@ bool GameEngine::stateValidation(const std::string& command) {
         case AssignReinforcement:
             if (command == "issueorder") {
                 setState(IssueOrders);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in AssignReinforcement state. Only allows issueorder." << std::endl;
@@ -137,9 +144,11 @@ bool GameEngine::stateValidation(const std::string& command) {
         // IssueOrders, can move to ExecuteOrders or stay in IssueOrders
         case IssueOrders:
             if (command == "issueorder") {
+                notify(this);
                 return true;
             } else if (command == "endissueorders") {
                 setState(ExecuteOrders);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in IssueOrders state. Only allows issueorder or endissueorders." << std::endl;
@@ -149,11 +158,14 @@ bool GameEngine::stateValidation(const std::string& command) {
         case ExecuteOrders:
             if (command == "endexecorders") {
                 setState(AssignReinforcement);
+                notify(this);
                 return true;
             } else if (command == "win") {
                 setState(Win);
+                notify(this);
                 return true;
             } else if (command == "execorders") {
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in ExecuteOrders state. Only allows execorders, endexecorders or win." << std::endl;
@@ -163,9 +175,11 @@ bool GameEngine::stateValidation(const std::string& command) {
         case Win:
             if (command == "play") {
                 setState(Start);
+                notify(this);
                 return true;
             } else if (command == "end") {
                 setState(End);
+                notify(this);
                 return true;
             } else {
                 std::cout << "Invalid command in Win state. Only allows play or end." << std::endl;
@@ -189,6 +203,7 @@ std::string GameEngine::getCurrentState() const {
 // Set the current state of the game engine
 void GameEngine::setState(state newState) {
     *currentState = newState;
+    notify(this);
 }
 //get player count
 int GameEngine::getPlayerCount() const {return players->size();}
@@ -415,6 +430,7 @@ std::string GameEngine::stringToLog() const {
     std::string log = "GameEngine transitioned to State: " + stateToString(*currentState);
     return log;
 }
+
 void GameEngine::startupPhase() {
     std::cout << "\n----- Warzone - Startup Phase: -----\n"
               << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";

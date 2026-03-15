@@ -1,13 +1,14 @@
 #ifndef ORDERS_H
 #define ORDERS_H
 
+#include "LoggingObserver.h"
 #include <vector>
 #include <string>
 #include <ostream>
 
 
 
-class Order {
+class Order : public Subject, public ILoggable {
 private:
     std::string* _description;
 
@@ -20,6 +21,7 @@ public:
 
     std::string getDescription() const;
     void setDescription(std::string description);
+    std::string stringToLog() const override;
 
     // Polymorphic cloning (virtual constructor) for deep copying via base class pointer.
     virtual Order* clone() const = 0;
@@ -149,7 +151,7 @@ public:
 
 };
 
-class OrdersList {
+class OrdersList : public Subject, public ILoggable {
 private:
     void clear();
     void copyFrom(const OrdersList& other);
@@ -167,6 +169,7 @@ public:
 
     int size() const;
     const Order* get(int index) const;
+    std::string stringToLog() const override;
 
     friend std::ostream& operator<<(std::ostream& os, const OrdersList& list);
 

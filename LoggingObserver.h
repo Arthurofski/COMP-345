@@ -16,7 +16,7 @@ public:
 
 class Observer {
     public:
-        virtual void update(ILoggable* loggable) = 0;
+        virtual void update( const ILoggable* loggable) = 0;
         virtual ~Observer() = default;
 };
 

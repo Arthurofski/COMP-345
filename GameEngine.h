@@ -1,6 +1,7 @@
 #ifndef GAMEENGINE_H
 #define GAMEENGINE_H
 
+#include "LoggingObserver.h"
 #include <string>
 #include <iostream>
 #include <vector>
@@ -69,14 +70,15 @@ public:
     std::string getCurrentState() const;
     int getPlayerCount() const;
 
+    void setState(state newState);
+    std::string stringToLog() const override;
+
 private:
     // currentState pointer
     state* currentState;
     std::vector<Player*>* players;
     Map* map;
     Deck* deck;
-    // Setter for the current state
-    void setState(state newState);
     bool checkWinCondition() const;
     void removeEliminatedPlayers();
 };

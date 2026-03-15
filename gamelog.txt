@@ -1,0 +1,4 @@
+Effect: Map loaded successfully
+GameEngine transitioned to State: MapLoaded
+Order Issued and added to list
+Order executed: Deploy

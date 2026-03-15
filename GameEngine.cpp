@@ -177,6 +177,12 @@ void GameEngine::reinforcementPhase(){
     std::cout << "Reinforcement phase has begun \n";
     
 }
+void GameEngine::issueOrdersPhase(){
+    std::cout << "Issue Order phase has begun\n";
+}
+void GameEngine::executeOrdersPhase(){
+    std::cout << "Execute Order phase has begun\n";
+}
 void GameEngine::mainGameLoop(int turns){
     int round = 1;
     int numPlayersLeft = players->size();

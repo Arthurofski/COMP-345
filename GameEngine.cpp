@@ -1,4 +1,5 @@
 #include "GameEngine.h"
+#include "CommandProcessing.h"
 #include <sstream>
 #include <random>
 #include <algorithm>
@@ -415,15 +416,13 @@ void GameEngine::startupPhase() {
     std::cout << "\n----- Warzone - Startup Phase: -----\n"
               << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";
 
+    CommandProcessor* cmdp = new CommandProcessor();
     std::string line;
     while (true) {
-        std::cout << "[" << getCurrentState() << "] > ";
-        if (!std::getline(std::cin, line)) break;   // EOF / pipe end
-        if (line.empty()) continue;
-
+        line = cmdp->getCommand(this);
         std::istringstream iss(line);
         std::string cmd;
-        iss >> cmd;
+        iss >> cmd; 
 
         // ---- loadmap <filename> ----------------------------------------
         if (cmd == "loadmap") {
@@ -564,5 +563,7 @@ void GameEngine::startupPhase() {
             std::cout << "Unknown command: '" << cmd
                       << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";
         }
+        delete cmdp;
+        cmdp = nullptr;
     }
 }

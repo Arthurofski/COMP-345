@@ -23,12 +23,12 @@ public:
 class CommandProcessor {
 private:
 	vector<Command*> command_list;
-	void readCommand(GameEngine* ge);
+	string readCommand(GameEngine* ge);
 	void saveCommand(Command* new_cmd);
 
 public:
 	CommandProcessor();
-	void getCommand(GameEngine* ge);
+	string getCommand(GameEngine* ge);
 	bool validate(string cmd_input, GameEngine* ge);
 };
 

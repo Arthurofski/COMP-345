@@ -4,9 +4,11 @@
 #include <string>
 #include <iostream>
 #include <vector>
-
+#include <algorithm>
 #include "Cards.h"
 #include "Orders.h"
+#include "Player.h"
+#include "Map.h"
 
 class Player;
 
@@ -41,6 +43,7 @@ public:
     // Main functions
     bool stateValidation(const std::string& command);
     void addPlayer(const std::string& playerName); //adds players to the game (max 6)
+    void assignCountries();//distribute map terrritories among players and set initial army
 
     //Part 3 methods
     //Reinforcement phase method
@@ -51,14 +54,19 @@ public:
     void mainGameLoop(int turns);
 
     // Getter for the current state
-    std::string getCurrentState();
+    std::string getCurrentState() const;
+    int getPlayerCount() const;
 
 private:
     // currentState pointer
     state* currentState;
     std::vector<Player*>* players;
+    Map* map;
+    Deck* deck;
     // Setter for the current state
     void setState(state newState);
+    bool checkWinCondition() const;
+    void removeEliminatedPlayers();
 };
 
 #endif //GAMEENGINE_H

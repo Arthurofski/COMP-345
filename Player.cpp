@@ -8,6 +8,7 @@ Player::Player(std::string n) {
     territories = new std::vector<Territory*>();
     hand = new Hand();
     orders = new OrdersList();
+    reinforcementPool = new int(0);
 }
 
 // Copy constructor (deep copy)
@@ -16,6 +17,7 @@ Player::Player(const Player& other) {
     territories = new std::vector<Territory*>(*(other.territories));
     hand = new Hand(*(other.hand));
     orders = new OrdersList(*(other.orders));
+    reinforcementPool = new int(*other.reinforcementPool);
 }
 
 // Assignment operator
@@ -25,11 +27,13 @@ Player& Player::operator=(const Player& other) {
         delete territories;
         delete hand;
         delete orders;
+        delete reinforcementPool;
         
         name = new std::string(*(other.name));
         territories = new std::vector<Territory*>(*(other.territories));
         hand = new Hand(*(other.hand));
         orders = new OrdersList(*(other.orders));
+        reinforcementPool = new int(*other.reinforcementPool);
     }
     return *this;
 }
@@ -40,12 +44,13 @@ Player::~Player() {
     delete territories;
     delete hand;         
     delete orders;       
-    
+    delete reinforcementPool;
     // Set to nullptr to prevent dangling pointers
     name = nullptr;
     territories = nullptr;
     hand = nullptr;
     orders = nullptr;
+    reinforcementPool = nullptr;
     
 }
 
@@ -53,8 +58,13 @@ Player::~Player() {
 std::ostream& operator<<(std::ostream& out, const Player& p) {
     out << "Player: " << *(p.name) << std::endl;
     out << "  Territories: " << p.territories->size() << std::endl;
+     for (Territory* t : *p.territories)
+        out << t->getName() << "(" << *t->armies << ") ";
+    out << "\n";
     out << "  Hand: " << *(p.hand) << std::endl;
+    out << "Reinforcement pool: " << *p.reinforcementPool << std::endl;
     out << "  Orders: " << *p.orders;
+    
     return out;
 }
 
@@ -63,12 +73,16 @@ std::string* Player::getName() const { return name; }
 std::vector<Territory*>* Player::getTerritories() const { return territories; }
 Hand* Player::getHand() const { return hand; }
 OrdersList* Player::getOrders() const { return orders; }
-
+int Player::getReinforcementPool() const {return *reinforcementPool;}
 // Add territory
 void Player::addTerritory(Territory* t) {
+    t->owner = this;
     territories->push_back(t);
 }
-
+void Player::removeTerritory(Territory* t){
+    territories->erase(
+        std::remove(territories->begin(),territories->end(),t),territories->end());
+}
 // Next methods are arbitrary implementations 
 // Defend method
 // Arbitrary implementation - returns all owned territories to defend
@@ -79,7 +93,6 @@ std::vector<Territory*>* Player::toDefend() {
     for (Territory* t : *territories) {
         result->push_back(t);
     }
-    
     return result;
 }
 
@@ -107,10 +120,81 @@ std::vector<Territory*>* Player::toAttack() {
 /**
  * issueOrder: creates a Deploy order targeting the player's first territory
  * and adds it to the player's OrdersList.
+ * Reinforcement pool >0 then we issue deploy order, none other order can go through
+ * once pool empty, issue an advance order
+ * if card in hand, can  play card 
  */
-void Player::issueOrder() {
-    std::string target = territories->empty() ? "NoTerritory" : territories->front()->getName();
-    Order* order = new Deploy(1, target);
-    orders->add(order);
-    std::cout << "Order issued: Deploy to " << target << std::endl;
+void Player::issueOrder(Deck* deck) {
+    // --- Phase 1: Deploy all reinforcements first ---
+    if (*reinforcementPool > 0) {
+        std::vector<Territory*>* defend = toDefend();
+ 
+        if (!defend->empty()) {
+            // Distribute one army per call to the territory with the fewest armies
+            Territory* weakest = defend->front();
+            for (Territory* t : *defend)
+                if (*t->armies < *weakest->armies) weakest = t;
+ 
+            int toDeploy = 1;  // deploy one army per call (game engine calls per army)
+            // orders->add(new Deploy(toDeploy, weakest));
+            *reinforcementPool -= toDeploy;
+            std::cout << "  [" << *name << "] Deploy " << toDeploy
+                      << " to " << weakest->getName()
+                      << " (pool remaining: " << *reinforcementPool << ")\n";
+        }
+        delete defend;
+        return;   // no other orders while pool > 0
+    }
+ 
+    // --- Phase 2: Advance (attack or defend) ---
+    std::vector<Territory*>* attack = toAttack();
+    std::vector<Territory*>* defend = toDefend();
+ 
+    bool issuedAdvance = false;
+ 
+    if (!attack->empty() && !defend->empty()) {
+        // Find the owned territory with the most armies to attack from
+        Territory* src = defend->front();
+        for (Territory* t : *defend)
+            if (*t->armies > *src->armies) src = t;
+ 
+        Territory* tgt = attack->front();  // attack the first reachable enemy
+ 
+        if (*src->armies > 1) {
+            int attacking = *src->armies / 2;
+            // orders->add(new Advance(attacking, src, tgt, this));   /to be uncommented
+            std::cout << "  [" << *name << "] Advance " << attacking
+                      << " from " << src->getName() << " -> " << tgt->getName() << "\n";
+            issuedAdvance = true;
+        }
+    } else if (defend->size() >= 2) {
+        // No enemies reachable — move armies to bolster a weaker own territory
+        Territory* strongest = defend->front();
+        Territory* weakest   = defend->front();
+        for (Territory* t : *defend) {
+            if (*t->armies > *strongest->armies) strongest = t;
+            if (*t->armies < *weakest->armies)   weakest   = t;
+        }
+        if (strongest != weakest && *strongest->armies > 1) {
+            int moving = *strongest->armies / 2;
+            // orders->add(new Advance(moving, strongest, weakest, this));
+            std::cout << "  [" << *name << "] Reinforce " << moving
+                      << " from " << strongest->getName()
+                      << " -> " << weakest->getName() << "\n";
+            issuedAdvance = true;
+        }
+    }
+ 
+    // --- Phase 3: Play a card if one is available ---
+    if (hand->getNumCards() > 0 && deck) {
+        Cards* card = hand->getCards()->front();
+        card->play(hand, deck, this);
+    }
+ 
+    delete attack;
+    delete defend;
+ 
+    if (!issuedAdvance && hand->getNumCards() == 0) {
+        std::cout << "  [" << *name << "] No orders to issue this round.\n";
+    }
 }

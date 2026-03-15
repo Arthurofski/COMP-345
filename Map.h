@@ -17,6 +17,7 @@ class Territory {
         std::string* name;
         Player* owner;
         Continent* continent;
+        int* armies;
         std::vector<Territory*>* neighbours;
 
         //Parameterized constructor + copy constructor

@@ -1,6 +1,4 @@
 #include "GameEngine.h"
-#include <iostream>
-#include <string>
 
 // Function to convert state enum to string for display purposes
 std::string stateToString( state s ) {
@@ -21,21 +19,42 @@ std::string stateToString( state s ) {
 // Default constructor for GameEngine, state is set to Start
 GameEngine::GameEngine() {
     currentState = new state(Start);
+    players = new std::vector<Player*>();
+    map=nullptr;
+    deck = new Deck(40);
 }
 
 // Copy constructor for GameEngine when given another GameEngine object
 GameEngine::GameEngine(const GameEngine& other) {
     currentState = new state(*(other.currentState));
+    players = new std::vector<Player*>();
+    map = other.map ? new Map(*other.map): nullptr;
+    deck = new Deck(40);
+    for(Player* p : *other.players){
+        players->push_back(new Player(*p));
+    }
 }
 
 // Constructor for GameEngine when given a state
 GameEngine::GameEngine(state currState) {
     currentState = new state(currState);
+    players = new std::vector<Player*>();
+    map = nullptr;
+    deck = new Deck(40);
 }
 
 // Destructor for GameEngine
 GameEngine::~GameEngine() {
     delete currentState;
+    for (Player* p: *players)
+        delete p;
+    delete players;
+    delete map;
+    delete deck;
+    players = nullptr;
+    currentState=nullptr;
+    map=nullptr;
+    deck=nullptr;
 }
 
 // Assignment operator for GameEngine
@@ -43,8 +62,19 @@ GameEngine& GameEngine::operator=(const GameEngine& other) {
     if (this == &other) {
         return *this;
     }
+    for (Player* p : *players)
+        delete p;
     delete currentState;
+    delete map;
+    delete deck;
+
+
     currentState = new state(*(other.currentState));
+    map = other.map ? new Map(*other.map):nullptr;
+    deck = new Deck(40);
+    for(Player* p: *other.players)
+        players->push_back(new Player(*p));
+    
     return *this;
 }
 
@@ -149,7 +179,7 @@ bool GameEngine::stateValidation(const std::string& command) {
 }
 
 // Get the current state of the game engine as a string
-std::string GameEngine::getCurrentState() {
+std::string GameEngine::getCurrentState() const {
     return stateToString(*currentState);
 }
 
@@ -157,10 +187,11 @@ std::string GameEngine::getCurrentState() {
 void GameEngine::setState(state newState) {
     *currentState = newState;
 }
-
+//get player count
+int GameEngine::getPlayerCount() const {return players->size();}
 // Stream insertion operator for GameEngine
 std::ostream& operator<<(std::ostream& os, const GameEngine& engine) {
-    os << "GameEngine State: " << stateToString(*engine.currentState);
+    os << "GameEngine State: " << stateToString(*engine.currentState) << "\nPlayers: " << engine.players->size();
     return os;
 }
 
@@ -172,10 +203,50 @@ void GameEngine::addPlayer(const std::string& playerName){
         std::cout << "Player " << playerName << " added\n";
     }
 }
-
+//winning and elimination methods
+bool GameEngine::checkWinCondition() const {
+    if (players->size() != 1) return false;
+    // One player remains — check they own everything
+    int total = (int)map->territories->size();
+    return (int)(*players)[0]->getTerritories()->size() == total;
+}
+void GameEngine::removeEliminatedPlayers() {
+    auto it = players->begin();
+    while (it != players->end()) {
+        if ((*it)->getTerritories()->empty()) {
+            std::cout << "  *** Player '" << *(*it)->getName()
+                 << "' eliminated (no territories). ***\n";
+            delete *it;
+            it = players->erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
+//Phase 1 reinforcement
 void GameEngine::reinforcementPhase(){
     std::cout << "Reinforcement phase has begun \n";
-    
+    for (Player* p: *players){
+        int count = p->getTerritories()->size();
+        int armies = std::max(3, count/3);
+
+        //include continent bonus
+        for (Continent* c: *map->continents){
+            bool ownsAll = true;
+            for (Territory* t: *c->territories){
+                if(t->owner !=p){
+                    ownsAll=false;
+                    break;
+                }
+            }
+            if(ownsAll){
+                armies += *c->bonus;
+                std::cout << *p->getName() << " earns + " << *c->bonus << " (owns all of " << *c->name << ")\n";
+            }
+        }
+        p->setReinforcementPool(armies);
+        std::cout << "  " << *p->getName() << " receives " << armies << " armies (owns " << count << " territories).\n";
+    }
 }
 void GameEngine::issueOrdersPhase(){
     std::cout << "Issue Order phase has begun\n";

@@ -412,6 +412,10 @@ void GameEngine::mainGameLoop(){
     }
 }
 
+std::string GameEngine::stringToLog() const {
+    std::string log = "GameEngine transitioned to State: " + stateToString(*currentState);
+    return log;
+}
 void GameEngine::startupPhase() {
     std::cout << "\n----- Warzone - Startup Phase: -----\n"
               << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";

@@ -30,7 +30,7 @@ enum state{
 std::string stateToString(state s);
 
 // GameEngine class definition
-class GameEngine {
+class GameEngine : public Subject, public ILoggable {
 public:
     // Constructors, destructor and operators
     GameEngine();

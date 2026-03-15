@@ -407,3 +407,8 @@ void GameEngine::mainGameLoop(){
         std::cout << "\n";
     }
 }
+
+std::string GameEngine::stringToLog() const {
+    std::string log = "GameEngine transitioned to State: " + stateToString(*currentState);
+    return log;
+}

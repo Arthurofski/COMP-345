@@ -73,11 +73,14 @@ std::string* Player::getName() const { return name; }
 std::vector<Territory*>* Player::getTerritories() const { return territories; }
 Hand* Player::getHand() const { return hand; }
 OrdersList* Player::getOrders() const { return orders; }
-int Player::getReinforcementPool() const {return *reinforcementPool;}
-// Add territory
+int Player::getReinforcementPool() const { return *reinforcementPool; }
+void Player::setReinforcementPool(int pool) { *reinforcementPool = pool; }
+
+// Add territory and mark the territory's owner as this player
 void Player::addTerritory(Territory* t) {
     t->owner = this;
     territories->push_back(t);
+    t->owner = this;
 }
 void Player::removeTerritory(Territory* t){
     territories->erase(

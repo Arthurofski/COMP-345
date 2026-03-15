@@ -34,6 +34,7 @@ public:
     Hand* getHand() const;
     OrdersList* getOrders() const;
     int getReinforcementPool() const;
+    void setReinforcementPool(int pool);
 
     void setReinforcementPool(int n);
     void addReinforcementPool(int n);
@@ -45,7 +46,7 @@ private:
     std::vector<Territory*>* territories;
     Hand* hand;
     OrdersList* orders;
-    int* reinforcementPool;//armies available to deploy in the turn deploy used
+    int* reinforcementPool;
 };
 
 #endif

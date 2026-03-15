@@ -15,20 +15,24 @@ Territory::Territory(string n) {
     owner = nullptr;
     continent = nullptr;
     neighbours= new vector<Territory*>();
+    armies = new int(0);
 }
 // Copy constructor for territory
 Territory::Territory(const Territory& other) {
     name = new string(*other.name);
     owner = other.owner; //here we do a shallow copy as the owner pointer is not this object's responsibliity, its player's responsibility
     continent = nullptr;    //map copy constructor will re-establish continent
-    neighbours = new vector<Territory*>(); //Map copy constructor will re-estabilish neighbours  
+    neighbours = new vector<Territory*>(); //Map copy constructor will re-estabilish neighbours
+    armies = new int(*other.armies);
 }
 
 Territory::~Territory(){
     delete name;
     delete neighbours;
+    delete armies;
     name = nullptr;
     neighbours = nullptr;
+    armies = nullptr;
     //other data members are not owned by territory 
 }
 // Associates a territory & continent with eachother
@@ -49,8 +53,10 @@ string Territory::getName() const {
 Territory& Territory::operator=(const Territory& other) {
     if (this != &other) {
         delete name;
+        delete armies;
         name = new string(*other.name);
         owner = other.owner;
+        armies = new int(*other.armies);
     }
     return *this;
 }

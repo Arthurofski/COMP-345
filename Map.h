@@ -19,6 +19,7 @@ class Territory {
         Continent* continent;
         int* armies;
         std::vector<Territory*>* neighbours;
+        int* armies;  // number of armies stationed on this territory
 
         //Parameterized constructor + copy constructor
         Territory(std::string n);

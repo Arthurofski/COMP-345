@@ -1,4 +1,6 @@
 #include "Orders.h"
+#include "Player.h"
+#include "Map.h"
 #include <iostream>
 
 using std::cout;
@@ -9,10 +11,18 @@ int main() {
 
     // 1) Create orders of every kind and add them to OrdersList
     // (Requirement: create every kind, place them in OrdersList) :contentReference[oaicite:6]{index=6} :contentReference[oaicite:7]{index=7}
+    // Setup: real Player and Territory so Deploy::validate/execute work correctly
+    Player* testPlayer = new Player("TestPlayer");
+    Territory* alaska  = new Territory("Alaska");
+    Continent* na      = new Continent("NorthAmerica", 5);
+    alaska->setContinent(na);
+    testPlayer->addTerritory(alaska);  // also sets alaska->owner = testPlayer
+    testPlayer->setReinforcementPool(20);
+
     OrdersList list;
 
-    // Valid-ish examples (logic can still be placeholder for A1)
-    list.add(new Deploy(5, "Alaska"));
+    // Valid-ish examples
+    list.add(new Deploy(5, testPlayer, alaska));
     list.add(new Advance(3, "Alaska", "Northwest Territory"));
     list.add(new Bomb("Greenland"));
     list.add(new Blockade("Ontario"));
@@ -21,8 +31,8 @@ int main() {
 
     // Add an intentionally "invalid" example too (to show invalid executes do nothing)
     // Requirement: invalid orders may exist; execute shouldn't result in action :contentReference[oaicite:8]{index=8}
-    list.add(new Bomb(""));                 // invalid if your validate checks empty target
-    list.add(new Deploy(-10, "Alaska"));    // invalid if your validate checks armies >= 0
+    list.add(new Bomb(""));                             // invalid: empty target name
+    list.add(new Deploy(-10, testPlayer, alaska));    // invalid: negative army count
 
     cout << "Initial OrdersList (before move/remove)\n";
     cout << list << endl;
@@ -68,5 +78,11 @@ int main() {
     cout << list << endl;
 
     cout << "Driver finished\n";
+
+    // Deploy orders in 'list' do not own testPlayer/alaska; safe to delete after list is done.
+    delete testPlayer;
+    delete alaska;
+    delete na;
+
     return 0;
 }

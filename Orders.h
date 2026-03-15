@@ -33,27 +33,31 @@ public:
  */
 std::ostream& operator<<(std::ostream& os, const Order& order);
 
+// Forward declarations so Deploy can reference Player and Territory without
+// a heavyweight include chain inside the header.
+class Player;
+class Territory;
+
 class Deploy : public Order {
-    private:
-    int* _armies;                       
-    std::string* _targetTerritoryName;  
+private:
+    int* _armies;
+    Player*    _player;    // non-owning: the player who issued this order
+    Territory* _territory; // non-owning: the target territory
 public:
     Deploy();
-    Deploy(int armies, const std::string& targetTerritoryName);
+    Deploy(int armies, Player* player, Territory* territory);
     Deploy(const Deploy& other);
     Deploy& operator=(const Deploy& other);
     ~Deploy() override;
-    
-    int getArmies() const;
-    std::string getTargetTerritoryName() const;
+
+    int        getArmies()    const;
+    Player*    getPlayer()    const;
+    Territory* getTerritory() const;
     void setArmies(int armies);
-    void setTargetTerritoryName(std::string targetTerritoryName);
 
-    Order* clone() const override;
-    bool validate() const override;
-    void execute() override;
-
-
+    Order* clone()        const override;
+    bool   validate()     const override;
+    void   execute()            override;
 };
 class Advance : public Order {
 private:

@@ -1,4 +1,7 @@
 #include "GameEngine.h"
+#include <sstream>
+#include <random>
+#include <algorithm>
 
 // Function to convert state enum to string for display purposes
 std::string stateToString( state s ) {
@@ -374,7 +377,7 @@ void GameEngine::mainGameLoop(){
     setState(AssignReinforcement);
  
     int round = 0;
-    const int MAX_ROUNDS = 50;  // safety cap to prevent infinite loops in demo
+    const int MAX_ROUNDS = 10;  // safety cap to prevent infinite loops in demo
  
     while (!checkWinCondition() && round < MAX_ROUNDS) {
         round++;
@@ -405,5 +408,161 @@ void GameEngine::mainGameLoop(){
         std::cout << "Remaining players: ";
         for (Player* p : *players) std::cout << *p->getName() << " ";
         std::cout << "\n";
+    }
+}
+
+void GameEngine::startupPhase() {
+    std::cout << "\n----- Warzone - Startup Phase: -----\n"
+              << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";
+
+    std::string line;
+    while (true) {
+        std::cout << "[" << getCurrentState() << "] > ";
+        if (!std::getline(std::cin, line)) break;   // EOF / pipe end
+        if (line.empty()) continue;
+
+        std::istringstream iss(line);
+        std::string cmd;
+        iss >> cmd;
+
+        // ---- loadmap <filename> ----------------------------------------
+        if (cmd == "loadmap") {
+            std::string filename;
+            if (!(iss >> filename)) {
+                std::cout << "Usage: loadmap <filename>\n";
+                continue;
+            }
+            // Valid in Start or MapLoaded states only
+            if (*currentState != Start && *currentState != MapLoaded) {
+                std::cout << "Cannot use 'loadmap' in state: " << getCurrentState() << "\n";
+                continue;
+            }
+            Map* loaded = MapLoader::load(filename);
+            if (!loaded) {
+                std::cout << "ERROR: failed to load map from '" << filename << "'.\n";
+                continue;
+            }
+            loadMap(loaded);   // calls setState(MapLoaded) internally
+
+        // ---- validatemap -----------------------------------------------
+        } else if (cmd == "validatemap") {
+            if (*currentState != MapLoaded) {
+                std::cout << "Must be in MapLoaded state. Current: " << getCurrentState() << "\n";
+                continue;
+            }
+            if (!map) {
+                std::cout << "No map loaded. Use 'loadmap <filename>' first.\n";
+                continue;
+            }
+            std::cout << "Validating map...\n";
+            if (map->validate()) {
+                std::cout << "Map is VALID.\n";
+                setState(MapValidated);
+            } else {
+                std::cout << "Map is INVALID. Please load a different map.\n";
+                // Reset so the user can try a new file
+                delete map;
+                map = nullptr;
+                setState(Start);
+            }
+
+        // ---- addplayer <n> -------------------------------------------
+        } else if (cmd == "addplayer") {
+            std::string playerName;
+            if (!(iss >> playerName)) {
+                std::cout << "Usage: addplayer <n>\n";
+                continue;
+            }
+            if (*currentState != MapValidated && *currentState != PlayersAdded) {
+                std::cout << "Cannot add players in state: " << getCurrentState() << "\n";
+                continue;
+            }
+            if (players->size() >= 6) {
+                std::cout << "Maximum of 6 players already reached.\n";
+                continue;
+            }
+            // addPlayer() handles the push and prints confirmation
+            addPlayer(playerName);
+            // Advance state MapValidated -> PlayersAdded on first player added
+            if (*currentState == MapValidated)
+                setState(PlayersAdded);
+
+        // ---- gamestart -------------------------------------------------
+        } else if (cmd == "gamestart") {
+            if (*currentState != PlayersAdded) {
+                std::cout << "Cannot use 'gamestart' in state: " << getCurrentState() << "\n";
+                continue;
+            }
+            if (players->size() < 2) {
+                std::cout << "Need at least 2 players. Currently have "
+                          << players->size() << ".\n";
+                continue;
+            }
+
+            std::cout << "\n--- gamestart ---\n";
+
+            // (a) Fairly distribute all territories round-robin
+            std::cout << "\n(a) Distributing territories...\n";
+            {
+                // Shuffle territory list so distribution is random each game
+                std::vector<Territory*> all = *map->territories;
+                std::mt19937 rng(std::random_device{}());
+                std::shuffle(all.begin(), all.end(), rng);
+
+                size_t n = players->size();
+                for (size_t i = 0; i < all.size(); ++i) {
+                    Player* owner = (*players)[i % n];
+                    owner->addTerritory(all[i]);
+                    *all[i]->armies = 3;
+                }
+                for (Player* p : *players)
+                    std::cout << "  " << *p->getName() << ": "
+                              << p->getTerritories()->size() << " territories\n";
+            }
+
+            // (b) Randomise order of play
+            std::cout << "\n(b) Randomising play order...\n";
+            {
+                std::mt19937 rng2(std::random_device{}());
+                std::shuffle(players->begin(), players->end(), rng2);
+                std::cout << "  Order: ";
+                for (size_t i = 0; i < players->size(); ++i) {
+                    std::cout << *(*players)[i]->getName();
+                    if (i + 1 < players->size()) std::cout << " -> ";
+                }
+                std::cout << "\n";
+            }
+
+            // (c) Give each player 50 initial armies
+            std::cout << "\n(c) Granting 50 armies to each player...\n";
+            for (Player* p : *players) {
+                p->setReinforcementPool(50);
+                std::cout << "  " << *p->getName() << " pool: 50\n";
+            }
+
+            // (d) Deal each player 2 cards from the shared deck
+            std::cout << "\n(d) Dealing 2 cards to each player...\n";
+            for (Player* p : *players) {
+                if (deck->getNumCards() >= 2) {
+                    deck->draw(p->getHand());
+                    deck->draw(p->getHand());
+                }
+                std::cout << "  " << *p->getName()
+                          << " hand: " << *p->getHand() << "\n";
+            }
+
+            // (e) Switch to play phase
+            std::cout << "\n(e) Switching to play phase...\n";
+            setState(AssignReinforcement);
+
+            std::cout << "\n----- Startup complete - game begins! -----\n";
+            std::cout << *this << "\n\n";
+            return;   // exit the startup loop
+
+        // ---- unknown command -------------------------------------------
+        } else {
+            std::cout << "Unknown command: '" << cmd
+                      << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";
+        }
     }
 }

@@ -5,6 +5,8 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <sstream>
+#include <random>
 #include "Cards.h"
 #include "Orders.h"
 #include "Player.h"
@@ -42,9 +44,18 @@ public:
 
     // Main functions
     bool stateValidation(const std::string& command);
+
+    /**
+     * startupPhase(): interactive command loop for the game setup sequence.
+     * Accepts: loadmap <filename>, validatemap, addplayer <n>, gamestart
+     * gamestart: distributes territories, randomises play order, grants 50
+     * armies each, deals 2 cards each, and transitions to the play phase.
+     */
+    void startupPhase();
+
     void loadMap(Map* map);
     void addPlayer(const std::string& playerName); //adds players to the game (max 6)
-    void assignCountries();//distribute map terrritories among players and set initial army
+    void assignCountries();//distribute map territories among players and set initial army
 
     //Part 3 methods
     //Reinforcement phase method

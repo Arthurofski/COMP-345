@@ -1,4 +1,5 @@
 #include "Orders.h"
+#include "Player.h"  // provides full Player and Territory definitions for validate/execute
 #include <iostream>
 using namespace std;
 
@@ -109,50 +110,63 @@ std::ostream& operator<<(std::ostream& os, const OrdersList& list) {
 Deploy::Deploy()
     : Order("Deploy"),
       _armies(new int(0)),
-      _targetTerritoryName(new std::string("")) {}
+      _player(nullptr),
+      _territory(nullptr) {}
 
-Deploy::Deploy(int armies, const std::string& targetTerritoryName)
+Deploy::Deploy(int armies, Player* player, Territory* territory)
     : Order("Deploy"),
       _armies(new int(armies)),
-      _targetTerritoryName(new std::string(targetTerritoryName)) {}
+      _player(player),
+      _territory(territory) {}
 
 Deploy::Deploy(const Deploy& other)
     : Order(other),
       _armies(new int(*other._armies)),
-      _targetTerritoryName(new std::string(*other._targetTerritoryName)) {}
+      _player(other._player),       // shallow copy — non-owning
+      _territory(other._territory)  // shallow copy — non-owning
+      {}
 
 Deploy& Deploy::operator=(const Deploy& other) {
     if (this == &other) return *this;
     Order::operator=(other);
-    *_armies = *other._armies;
-    *_targetTerritoryName = *other._targetTerritoryName;
+    *_armies   = *other._armies;
+    _player    = other._player;    // shallow — non-owning
+    _territory = other._territory; // shallow — non-owning
     return *this;
 }
 
 Deploy::~Deploy() {
     delete _armies;
-    delete _targetTerritoryName;
+    // _player and _territory are non-owning; do not delete
 }
 
-int Deploy::getArmies() const { return *_armies; }
-std::string Deploy::getTargetTerritoryName() const { return *_targetTerritoryName; }
-void Deploy::setArmies(int armies) { *_armies = armies; }
-void Deploy::setTargetTerritoryName(std::string targetTerritoryName) { *_targetTerritoryName = targetTerritoryName; }
-
+int        Deploy::getArmies()    const { return *_armies; }
+Player*    Deploy::getPlayer()    const { return _player; }
+Territory* Deploy::getTerritory() const { return _territory; }
+void       Deploy::setArmies(int armies) { *_armies = armies; }
 
 Order* Deploy::clone() const { return new Deploy(*this); }
 
+// Valid when: player and territory are set, player owns the territory,
+// armies > 0, and the player's reinforcement pool can cover the cost.
 bool Deploy::validate() const {
-    // Placeholder validation; later: check player owns target, has reinforcements, armies > 0, etc.
-    return (*_armies >= 0);
+    if (!_player || !_territory)           return false;
+    if (_territory->owner != _player)      return false;
+    if (*_armies <= 0)                     return false;
+    if (_player->getReinforcementPool() < *_armies) return false;
+    return true;
 }
 
 void Deploy::execute() {
     if (!validate()) {
-        cout << "Invalid Deploy order: " << *this << endl;
+        cout << "Invalid Deploy order." << endl;
         return;
     }
-    cout << "Executing Deploy: " << *_armies << " armies to " << *_targetTerritoryName << endl;
+    *_territory->armies += *_armies;
+    _player->setReinforcementPool(_player->getReinforcementPool() - *_armies);
+    cout << "Deployed " << *_armies << " armies to " << _territory->getName()
+         << ". Armies there: " << *_territory->armies
+         << ". Remaining pool: " << _player->getReinforcementPool() << endl;
 }
 
 

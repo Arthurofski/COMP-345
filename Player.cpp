@@ -8,6 +8,7 @@ Player::Player(std::string n) {
     territories = new std::vector<Territory*>();
     hand = new Hand();
     orders = new OrdersList();
+    reinforcementPool = new int(0);
 }
 
 // Copy constructor (deep copy)
@@ -16,6 +17,7 @@ Player::Player(const Player& other) {
     territories = new std::vector<Territory*>(*(other.territories));
     hand = new Hand(*(other.hand));
     orders = new OrdersList(*(other.orders));
+    reinforcementPool = new int(*other.reinforcementPool);
 }
 
 // Assignment operator
@@ -25,11 +27,13 @@ Player& Player::operator=(const Player& other) {
         delete territories;
         delete hand;
         delete orders;
+        delete reinforcementPool;
         
         name = new std::string(*(other.name));
         territories = new std::vector<Territory*>(*(other.territories));
         hand = new Hand(*(other.hand));
         orders = new OrdersList(*(other.orders));
+        reinforcementPool = new int(*other.reinforcementPool);
     }
     return *this;
 }
@@ -40,12 +44,14 @@ Player::~Player() {
     delete territories;
     delete hand;         
     delete orders;       
+    delete reinforcementPool;
     
     // Set to nullptr to prevent dangling pointers
     name = nullptr;
     territories = nullptr;
     hand = nullptr;
     orders = nullptr;
+    reinforcementPool = nullptr;
     
 }
 
@@ -53,6 +59,7 @@ Player::~Player() {
 std::ostream& operator<<(std::ostream& out, const Player& p) {
     out << "Player: " << *(p.name) << std::endl;
     out << "  Territories: " << p.territories->size() << std::endl;
+    out << "  Reinforcement Pool: " << *p.reinforcementPool << std::endl;
     out << "  Hand: " << *(p.hand) << std::endl;
     out << "  Orders: " << *p.orders;
     return out;
@@ -63,10 +70,13 @@ std::string* Player::getName() const { return name; }
 std::vector<Territory*>* Player::getTerritories() const { return territories; }
 Hand* Player::getHand() const { return hand; }
 OrdersList* Player::getOrders() const { return orders; }
+int Player::getReinforcementPool() const { return *reinforcementPool; }
+void Player::setReinforcementPool(int pool) { *reinforcementPool = pool; }
 
-// Add territory
+// Add territory and mark the territory's owner as this player
 void Player::addTerritory(Territory* t) {
     territories->push_back(t);
+    t->owner = this;
 }
 
 // Next methods are arbitrary implementations 
@@ -109,8 +119,9 @@ std::vector<Territory*>* Player::toAttack() {
  * and adds it to the player's OrdersList.
  */
 void Player::issueOrder() {
-    std::string target = territories->empty() ? "NoTerritory" : territories->front()->getName();
-    Order* order = new Deploy(1, target);
+    Territory* target = territories->empty() ? nullptr : territories->front();
+    Order* order = new Deploy(1, this, target);
     orders->add(order);
-    std::cout << "Order issued: Deploy to " << target << std::endl;
+    std::cout << "Order issued: Deploy to "
+              << (target ? target->getName() : "NoTerritory") << std::endl;
 }

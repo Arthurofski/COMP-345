@@ -32,6 +32,8 @@ public:
     std::vector<Territory*>* getTerritories() const;
     Hand* getHand() const;
     OrdersList* getOrders() const;
+    int getReinforcementPool() const;
+    void setReinforcementPool(int pool);
 
     void addTerritory(Territory* t);
 
@@ -40,6 +42,7 @@ private:
     std::vector<Territory*>* territories;
     Hand* hand;
     OrdersList* orders;
+    int* reinforcementPool;
 };
 
 #endif

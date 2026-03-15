@@ -567,7 +567,7 @@ void GameEngine::startupPhase() {
             std::cout << "Unknown command: '" << cmd
                       << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";
         }
-        delete cmdp;
-        cmdp = nullptr;
     }
+    delete cmdp;
+    cmdp = nullptr;
 }

@@ -72,17 +72,17 @@ string CommandProcessor::getCommand(GameEngine* ge) {
 bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 	string state = ge->getCurrentState();
 
-	if (cmd_input == "loadmap" && (state == "Start" || "MapLoaded"))
+	if (cmd_input == "loadmap" && (state == "Start" || state == "MapLoaded"))
 		return true;
-	if (cmd_input == "validatemap" && (state == "MapLoaded"))
+	if (cmd_input == "validatemap" && state == "MapLoaded")
 		return true;
-	if (cmd_input == "addplayer" && (state == "MapValidated" || "PlayersAdded"))
+	if (cmd_input == "addplayer" && (state == "MapValidated" || state == "PlayersAdded"))
 		return true;
-	if (cmd_input == "gamestart" && (state == "PlayersAdded"))
+	if (cmd_input == "gamestart" && state == "PlayersAdded")
 		return true;
-	if (cmd_input == "replay" && (state == "Win"))
+	if (cmd_input == "replay" && state == "Win")
 		return true;
-	if (cmd_input == "quit" && (state == "Win"))
+	if (cmd_input == "quit" && state == "Win")
 		return true;
 		
 	return false;

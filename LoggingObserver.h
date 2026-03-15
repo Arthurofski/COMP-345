@@ -35,7 +35,7 @@ class Subject {
 
 class LogObserver : public Observer {
     public:
-        void update(const ILoggable* loggable) override;
+        void update(const ILoggable* loggable);
 };
 
 #endif

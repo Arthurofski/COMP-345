@@ -8,6 +8,8 @@
 #include "GameEngine.h"
 using namespace std;
 
+class GameEngine;
+
 // Command class declaration
 class Command : public Subject, public ILoggable {
 private:
@@ -26,10 +28,12 @@ class CommandProcessor : public Subject, public ILoggable {
 private:
 	vector<Command*> command_list;
 	void readCommand(GameEngine* ge);
+	string readCommand(GameEngine* ge);
+	void saveCommand(Command* new_cmd);
 
 public:
 	CommandProcessor();
-	void getCommand(GameEngine* ge);
+	string getCommand(GameEngine* ge);
 	bool validate(string cmd_input, GameEngine* ge);
 	void saveCommand(Command* new_cmd);
 	std::string stringToLog() const override;
@@ -40,4 +44,4 @@ class FileCommandProcessorAdapter {
 
 };
 
-#endif
+#endif //COMMANDPROCESSING_H

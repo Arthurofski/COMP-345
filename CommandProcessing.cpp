@@ -28,17 +28,39 @@ string Command::stringToLog() const {
 CommandProcessor::CommandProcessor() {}
 
 // Reads command, validates it, then creates a command object and saves it in the command list
-void CommandProcessor::readCommand(GameEngine* ge) {
-	string cmd_input;
-	do {
-		cin >> cmd_input;
-		if (validate(cmd_input, ge)) {
-			Command* new_cmd = new Command(cmd_input);
+std::string CommandProcessor::readCommand(GameEngine* ge) {
+	std::string line, cmd;
+    while (true) {
+        std::cout << "[" << ge->getCurrentState() << "] > ";
+        if (!std::getline(std::cin, line)) break; // EOF / pipe end
+        if (line.empty()) continue;
+
+        std::istringstream iss(line);
+        iss >> cmd;
+
+		if (validate(cmd, ge)) {
+			Command* new_cmd = new Command(cmd);
 			saveCommand(new_cmd);
+			break;
 		}
 		else
 			cout << "\nInvalid command!\n";
-	} while (!validate(cmd_input, ge));
+	}
+	if (!line.empty())
+		return line;
+
+	if (cmd == "replay") {
+		std::cout << "Starting new game...\n";
+		delete ge;
+		ge = new GameEngine();
+		ge->startupPhase();
+	}
+
+	if (cmd == "quit") {
+		std::cout << "Quitting game...\n";
+		exit(0);
+	}
+	return "";
 }
 
 // Saves a command object in the command list
@@ -47,25 +69,25 @@ void CommandProcessor::saveCommand(Command* new_cmd) {
 }
 
 // Public method for getting commands from the user
-void CommandProcessor::getCommand(GameEngine* ge) {
-	readCommand(ge);
+string CommandProcessor::getCommand(GameEngine* ge) {
+	return readCommand(ge);
 }
 
 // Validates a command based on whether it exists and if it can be used in the current game state
 bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 	string state = ge->getCurrentState();
 
-	if (cmd_input == "loadmap" && (state == "Start" || "MapLoaded"))
+	if (cmd_input == "loadmap" && (state == "Start" || state == "MapLoaded"))
 		return true;
-	if (cmd_input == "validatemap" && (state == "MapLoaded"))
+	if (cmd_input == "validatemap" && state == "MapLoaded")
 		return true;
-	if (cmd_input == "addplayer" && (state == "MapValidated" || "PlayersAdded"))
+	if (cmd_input == "addplayer" && (state == "MapValidated" || state == "PlayersAdded"))
 		return true;
-	if (cmd_input == "gamestart" && (state == "PlayersAdded"))
+	if (cmd_input == "gamestart" && state == "PlayersAdded")
 		return true;
-	if (cmd_input == "replay" && (state == "Win"))
+	if (cmd_input == "replay" && state == "Win")
 		return true;
-	if (cmd_input == "quit" && (state == "Win"))
+	if (cmd_input == "quit" && state == "Win")
 		return true;
 		
 	return false;

@@ -75,6 +75,7 @@ Hand* Player::getHand() const { return hand; }
 OrdersList* Player::getOrders() const { return orders; }
 int Player::getReinforcementPool() const { return *reinforcementPool; }
 void Player::setReinforcementPool(int pool) { *reinforcementPool = pool; }
+void  Player::addReinforcementPool(int n){*reinforcementPool+=n;}
 
 // Add territory and mark the territory's owner as this player
 void Player::addTerritory(Territory* t) {
@@ -139,7 +140,7 @@ void Player::issueOrder(Deck* deck) {
                 if (*t->armies < *weakest->armies) weakest = t;
  
             int toDeploy = 1;  // deploy one army per call (game engine calls per army)
-            // orders->add(new Deploy(toDeploy, weakest));
+            orders->add(new Deploy(toDeploy,this, weakest));
             *reinforcementPool -= toDeploy;
             std::cout << "  [" << *name << "] Deploy " << toDeploy
                       << " to " << weakest->getName()
@@ -165,7 +166,7 @@ void Player::issueOrder(Deck* deck) {
  
         if (*src->armies > 1) {
             int attacking = *src->armies / 2;
-            // orders->add(new Advance(attacking, src, tgt, this));   /to be uncommented
+            orders->add(new Advance(attacking, src->getName(), tgt->getName()));   
             std::cout << "  [" << *name << "] Advance " << attacking
                       << " from " << src->getName() << " -> " << tgt->getName() << "\n";
             issuedAdvance = true;
@@ -180,7 +181,7 @@ void Player::issueOrder(Deck* deck) {
         }
         if (strongest != weakest && *strongest->armies > 1) {
             int moving = *strongest->armies / 2;
-            // orders->add(new Advance(moving, strongest, weakest, this));
+            orders->add(new Advance(moving, strongest->getName(), weakest->getName()));
             std::cout << "  [" << *name << "] Reinforce " << moving
                       << " from " << strongest->getName()
                       << " -> " << weakest->getName() << "\n";

@@ -17,7 +17,6 @@ class Territory {
         std::string* name;
         Player* owner;
         Continent* continent;
-        int* armies;
         std::vector<Territory*>* neighbours;
         int* armies;  // number of armies stationed on this territory
 
@@ -40,6 +39,7 @@ class Continent {
         std::string* name;
         int* bonus;
         std::vector<Territory*>* territories;
+        
         //Default constructor, parameterized constructor, copy constructor
         Continent();
         Continent(std::string n, int b);

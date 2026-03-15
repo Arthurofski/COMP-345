@@ -57,52 +57,78 @@ void Cards::play(Hand* hand, Deck* deck, Player* player) {
         return;
     }
 
-    cout << "Playing card: " << *this << endl;
+    cout << "  [Card played: " << *this << "]\n";
 
     Order* order = nullptr;
 
     switch (*_cardType) {
-        case BOMB:
-            // Bombs an arbitrary enemy territory (placeholder target)
-            order = new Bomb("EnemyTerritory");
+        case BOMB: {
+            // Bomb an adjacent enemy territory
+            vector<Territory*>* attack = player->toAttack();
+            string tgt = (!attack->empty()) ? attack->front()->getName() : "EnemyTerritory";
+            order = new Bomb(tgt);
+            delete attack;
             break;
-
-        case REINFORCEMENT:
-            // Deploy uses player's first territory as target, or "NoTerritory" if none owned
-            {
-                string target = player->getTerritories()->empty()
-                                ? "NoTerritory"
-                                : player->getTerritories()->front()->getName();
-                order = new Deploy(3, target);
+        }
+        case REINFORCEMENT: {
+            // Extra deploy to the player's weakest territory
+            vector<Territory*>* defend = player->toDefend();
+            if (!defend->empty()) {
+                Territory* weakest = defend->front();
+                for (Territory* t : *defend)
+                    if (*t->armies < *weakest->armies) weakest = t;
+                // Add 3 directly to player's pool so Deploy::validate() passes,
+                // then queue the order (execute() will deduct them back).
+                player->addReinforcementPool(3);
+                order = new Deploy(3, player, weakest);
+            } else {
+                order = new Deploy(); // empty default — validate() will fail safely
             }
+            delete defend;
             break;
-
-        case BLOCKADE:
-            // Blockades one of the player's own territories
-            {
-                string target = player->getTerritories()->empty()
-                                ? "NoTerritory"
-                                : player->getTerritories()->front()->getName();
-                order = new Blockade(target);
+        }
+        case BLOCKADE: {
+            // Blockade the player's most-threatened territory
+            vector<Territory*>* defend = player->toDefend();
+            string tgt = (!defend->empty()) ? defend->front()->getName() : "NoTerritory";
+            order = new Blockade(tgt);
+            delete defend;
+            break;
+        }
+        case AIRLIFT: {
+            // Airlift from strongest to weakest owned territory
+            vector<Territory*>* defend = player->toDefend();
+            string src = "Source", tgt = "Target";
+            int moving = 5;
+            if (defend->size() >= 2) {
+                Territory* strongest = defend->front();
+                Territory* weakest   = defend->front();
+                for (Territory* t : *defend) {
+                    if (*t->armies > *strongest->armies) strongest = t;
+                    if (*t->armies < *weakest->armies)   weakest   = t;
+                }
+                src    = strongest->getName();
+                tgt    = weakest->getName();
+                moving = *strongest->armies / 2;
             }
+            order = new Airlift(moving, src, tgt);
+            delete defend;
             break;
-
-        case AIRLIFT:
-            // Airlifts armies between two of the player's territories (placeholder)
-            order = new Airlift(5, "SourceTerritory", "TargetTerritory");
+        }
+        case DIPLOMACY: {
+            // Negotiate with a random neighbour's owner
+            vector<Territory*>* attack = player->toAttack();
+            string tgt = "OpponentPlayer";
+            if (!attack->empty() && attack->front()->owner)
+                tgt = *attack->front()->owner->getName();
+            order = new Negotiate(tgt);
+            delete attack;
             break;
-
-        case DIPLOMACY:
-            // Negotiates with an arbitrary opponent (placeholder)
-            order = new Negotiate("OpponentPlayer");
-            break;
+        }
     }
+    if(order!=nullptr)
+        player->getOrders()->add(order);
 
-    // Add the created order to the player's real OrdersList
-    player->getOrders()->add(order);
-    cout << "  -> Added order: " << *order << " to " << *player->getName() << "'s order list." << endl;
-
-    // Remove from hand and return to deck
     hand->removeCard(this);
     deck->addCard(this);
 }

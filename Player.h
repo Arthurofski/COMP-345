@@ -9,6 +9,7 @@
 // For Assignment 1, using placeholder classes
 // Unfinished classes for compilation only
 class Hand;
+class Deck;
 class OrdersList;
 class Order;
 class Territory;
@@ -35,8 +36,6 @@ public:
     OrdersList* getOrders() const;
     int getReinforcementPool() const;
     void setReinforcementPool(int pool);
-
-    void setReinforcementPool(int n);
     void addReinforcementPool(int n);
     void addTerritory(Territory* t);
     void removeTerritory(Territory *t);

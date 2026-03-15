@@ -195,6 +195,13 @@ std::ostream& operator<<(std::ostream& os, const GameEngine& engine) {
     return os;
 }
 
+//Game startup functions
+void GameEngine::loadMap(Map* m){
+    delete map;
+    map = m;
+    setState(MapLoaded);
+    std::cout <<"Map loaded: " << map->territories->size() << " territories, " << map->continents->size() << " coninents.\n";
+}
 void GameEngine::addPlayer(const std::string& playerName){
     if(players->size() >=6){
         std::cout << "Maximum amount of players reached.\n";
@@ -203,6 +210,29 @@ void GameEngine::addPlayer(const std::string& playerName){
         std::cout << "Player " << playerName << " added\n";
     }
 }
+
+void GameEngine::assignCountries(){
+    if(!map || players->empty())
+        return;
+    int pie = 0;
+    for (Territory* t: *map->territories){
+        (*players)[pie %players->size()]->addTerritory(t);
+        *t->armies = 3;//each territory starts with 3 armies can be changed according to warzone rules
+        pie++;
+    }
+    // Deal 2 cards to each player from the shared deck
+    for (Player* p : *players) {
+        if (deck->getNumCards() >= 2) {
+            deck->draw(p->getHand());
+            deck->draw(p->getHand());
+        }
+    }
+ 
+    setState(AssignReinforcement);
+    std::cout << "Countries assigned. Each player starts with "
+         << (*players)[0]->getTerritories()->size() << " territories (approx).\n";
+}
+
 //winning and elimination methods
 bool GameEngine::checkWinCondition() const {
     if (players->size() != 1) return false;
@@ -223,7 +253,9 @@ void GameEngine::removeEliminatedPlayers() {
         }
     }
 }
-//Phase 1 reinforcement
+
+//====================Phase 1 reinforcement=====================
+//each player gets territories/3 armies minimum of 3 + continent bonus to players owning continent
 void GameEngine::reinforcementPhase(){
     std::cout << "Reinforcement phase has begun \n";
     for (Player* p: *players){
@@ -248,13 +280,130 @@ void GameEngine::reinforcementPhase(){
         std::cout << "  " << *p->getName() << " receives " << armies << " armies (owns " << count << " territories).\n";
     }
 }
+//=======================Phase 2 issue orders=====================
+//round robin calls to each player's issueOrder() until all players emptied their reinforcement pool and issued at least one advance/card order
 void GameEngine::issueOrdersPhase(){
     std::cout << "Issue Order phase has begun\n";
+    bool poolLeft = true;
+    while(poolLeft){
+        poolLeft=false;
+        for(Player* p: *players){
+            if(p->getReinforcementPool()>0){
+                p->issueOrder(deck);
+                poolLeft=true;
+            }
+        }
+    }
+    std::cout << "All reinforcement deployed. Issuing advance/card orders... \n";
+    for(Player* p: *players){
+        p->issueOrder(deck);
+    }
 }
+
+//=======================Phase 3 execute order======================
+//order is: 1-Execute all deploy orders accross all players first 
+//2:then execute remiaining orders until all lists are empty
+//after execution we remove eliminated players.
 void GameEngine::executeOrdersPhase(){
-    std::cout << "Execute Order phase has begun\n";
+    // Step 1: Execute all deploys first
+    std::cout << "\n--- Execute Orders Phase ---\n";
+ 
+    // Helper: find the index of the first Deploy order in a player's list.
+    auto firstDeployIndex = [](OrdersList* ol) -> int {
+        for (int i = 0; i < ol->size(); ++i)
+            if (dynamic_cast<const Deploy*>(ol->get(i))) return i;
+        return -1;
+    };
+ 
+    // Step 0: Restore each player's pool to cover their queued Deploy orders.
+    // issueOrder() decremented the pool per order queued; Deploy::execute() will
+    // deduct it again, so we add back exactly what was queued.
+    for (Player* p : *players) {
+        int deployTotal = 0;
+        for (int i = 0; i < p->getOrders()->size(); ++i) {
+            const Deploy* d = dynamic_cast<const Deploy*>(p->getOrders()->get(i));
+            if (d) deployTotal += d->getArmies();
+        }
+        p->addReinforcementPool(deployTotal);  // restore to pre-issue level
+    }
+ 
+    // Step 1: Execute all Deploy orders first, round-robin across players.
+    std::cout << "  Executing Deploy orders...\n";
+    bool anyDeploy = true;
+    while (anyDeploy) {
+        anyDeploy = false;
+        for (Player* p : *players) {
+            int idx = firstDeployIndex(p->getOrders());
+            if (idx >= 0) {
+                p->getOrders()->move(idx, 0);
+                const Order* co = p->getOrders()->get(0);
+                Order* o = const_cast<Order*>(co);
+                o->execute();
+                p->getOrders()->remove(0);
+                anyDeploy = true;
+            }
+        }
+    }
+ 
+    // Step 2: Execute remaining orders round-robin.
+    std::cout << "  Executing remaining orders...\n";
+    bool anyLeft = true;
+    while (anyLeft) {
+        anyLeft = false;
+        for (Player* p : *players) {
+            if (p->getOrders()->size() > 0) {
+                const Order* co = p->getOrders()->get(0);
+                Order* o = const_cast<Order*>(co);
+                o->execute();
+                p->getOrders()->remove(0);
+                anyLeft = true;
+            }
+        }
+    }
+ 
+    removeEliminatedPlayers();
 }
-void GameEngine::mainGameLoop(int turns){
-    int round = 1;
-    int numPlayersLeft = players->size();
+
+void GameEngine::mainGameLoop(){
+    if (!map || players->empty()) {
+        std::cout << "Cannot start game: map not loaded or no players.\n";
+        return;
+    }
+ 
+    std::cout << "\n========== MAIN GAME LOOP ==========\n";
+    setState(AssignReinforcement);
+ 
+    int round = 0;
+    const int MAX_ROUNDS = 50;  // safety cap to prevent infinite loops in demo
+ 
+    while (!checkWinCondition() && round < MAX_ROUNDS) {
+        round++;
+        std::cout << "\n====== Round " << round << " ======"
+             << "  Players remaining: " << players->size() << "\n";
+ 
+        reinforcementPhase();
+ 
+        setState(IssueOrders);
+        issueOrdersPhase();
+ 
+        setState(ExecuteOrders);
+        executeOrdersPhase();
+ 
+        // Check for winner after each round
+        if (checkWinCondition()) break;
+ 
+        // All surviving players move to next reinforcement phase
+        setState(AssignReinforcement);
+    }
+ 
+    if (players->size() == 1) {
+        setState(Win);
+        std::cout << "\n*** " << *(*players)[0]->getName()
+             << " wins the game! ***\n";
+    } else if (round >= MAX_ROUNDS) {
+        std::cout << "\n[Demo cap reached after " << MAX_ROUNDS << " rounds.]\n";
+        std::cout << "Remaining players: ";
+        for (Player* p : *players) std::cout << *p->getName() << " ";
+        std::cout << "\n";
+    }
 }

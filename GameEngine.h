@@ -42,6 +42,7 @@ public:
 
     // Main functions
     bool stateValidation(const std::string& command);
+    void loadMap(Map* map);
     void addPlayer(const std::string& playerName); //adds players to the game (max 6)
     void assignCountries();//distribute map terrritories among players and set initial army
 
@@ -51,7 +52,7 @@ public:
     void issueOrdersPhase();
     void executeOrdersPhase();
     //main game loop method containing the 3 phases
-    void mainGameLoop(int turns);
+    void mainGameLoop();
 
     // Getter for the current state
     std::string getCurrentState() const;

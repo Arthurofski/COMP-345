@@ -436,13 +436,14 @@ void GameEngine::startupPhase() {
     std::cout << "\n----- Warzone - Startup Phase: -----\n"
               << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";
 
-    CommandProcessor* cmdp = new CommandProcessor();
+    CommandProcessor* cmdproc = new CommandProcessor();
     std::string line;
     while (true) {
-        line = cmdp->getCommand(this);
+        line = cmdproc->getCommand(this);
         std::istringstream iss(line);
         std::string cmd;
         iss >> cmd; 
+        Command* new_cmd = new Command(cmd); 
 
         // ---- loadmap <filename> ----------------------------------------
         if (cmd == "loadmap") {
@@ -461,6 +462,8 @@ void GameEngine::startupPhase() {
                 std::cout << "ERROR: failed to load map from '" << filename << "'.\n";
                 continue;
             }
+            new_cmd->saveEffect("Loaded map: " + filename);
+            cmdproc->saveCommand(new_cmd);
             loadMap(loaded);   // calls setState(MapLoaded) internally
 
         // ---- validatemap -----------------------------------------------
@@ -479,6 +482,9 @@ void GameEngine::startupPhase() {
                 setState(MapValidated);
             } else {
                 std::cout << "Map is INVALID. Please load a different map.\n";
+                new_cmd->saveEffect("Invalid map");
+                cmdproc->saveCommand(new_cmd);
+                
                 // Reset so the user can try a new file
                 delete map;
                 map = nullptr;
@@ -583,7 +589,9 @@ void GameEngine::startupPhase() {
             std::cout << "Unknown command: '" << cmd
                       << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";
         }
+        delete new_cmd;
+        new_cmd = nullptr;
     }
-    delete cmdp;
-    cmdp = nullptr;
+    delete cmdproc;
+    cmdproc = nullptr;
 }

@@ -107,9 +107,15 @@ string CommandProcessor::stringToLog() const {
 // -----------------------FILE LINE READER CLASS IMPLEMENTATION------------------------
 
 FileLineReader::FileLineReader(const std::string& filename) : filename(filename) {
-    file.open(filename);
-    if (!file.is_open())
-        throw std::runtime_error("Could not open command file: " + filename);
+    while (true) {
+		file.open(filename);
+		if (!file.is_open())
+			cout << "Could not open file: " << filename << endl;
+		else {
+			cout << "Opened file: " << filename << endl;
+			break;
+		}
+	}
 }
 
 FileLineReader::~FileLineReader() {

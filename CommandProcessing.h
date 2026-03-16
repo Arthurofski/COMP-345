@@ -21,6 +21,9 @@ public:
 	Command();
 	Command(string command);
 	~Command();
+	Command(const Command& other);
+    Command& operator=(const Command& other);
+    friend ostream& operator<<(ostream& os, const Command& cmd);
 	void saveEffect(string effect);
 	std::string stringToLog() const override;
 };
@@ -34,6 +37,9 @@ private:
 public:
 	CommandProcessor();
 	~CommandProcessor();
+	CommandProcessor(const CommandProcessor& other);
+    CommandProcessor& operator=(const CommandProcessor& other);
+    friend ostream& operator<<(ostream& os, const CommandProcessor& cp);
 	string getCommand(GameEngine* ge);
 	bool validate(string cmd_input, GameEngine* ge);
 	void saveCommand(Command* new_cmd);
@@ -48,6 +54,9 @@ private:
 public:
     FileLineReader(const std::string& filename);
     ~FileLineReader();
+    FileLineReader(const FileLineReader& other); 
+    FileLineReader& operator=(const FileLineReader& other); 
+    friend ostream& operator<<(ostream& os, const FileLineReader& flr);
     std::string readNextLine();
     bool notDone() const;
 };
@@ -62,6 +71,9 @@ private:
 public:
     FileCommandProcessorAdapter(const std::string& filename);
     ~FileCommandProcessorAdapter();
+	FileCommandProcessorAdapter(const FileCommandProcessorAdapter& other); 
+    FileCommandProcessorAdapter& operator=(const FileCommandProcessorAdapter& other);
+    friend ostream& operator<<(ostream& os, const FileCommandProcessorAdapter& fcpa); 
 };
 
 #endif //COMMANDPROCESSING_H

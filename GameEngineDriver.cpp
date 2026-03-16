@@ -556,14 +556,16 @@ static void demo_main_game(){
         usa->addNeighbour(china);     china->addNeighbour(usa);
 
         GameEngine ge;
-        ge.loadMap(m);
-        ge.addPlayer("Alice");
-        ge.addPlayer("Bob");
-        ge.assignCountries();
-
+        runStartup(ge, "loadmap demo.map\n"
+            "validatemap\n"
+            "addplayer Alice\n"
+            "addplayer Bob\n"
+            "addplayer Carol\n"
+            "gamestart\n");
+        assert(ge.getCurrentState() == "AssignReinforcement");
+        cout << "[ASSERT] State == AssignReinforcement after gamestart - PASS\n\n";
         ge.mainGameLoop();
 
- 
 }
 
 // main
@@ -586,6 +588,6 @@ int main() {
          << "  All 6 criteria demonstrated and asserted successfully.\n"
          << "============================================================\n";
 
-    demo_main_game();   //(7) Main game demo demonstrating main game loop works
+    demo_main_game();   //(7) Main game demo demonstrating main game loop works + game Startup phase works.
     return 0;
 }

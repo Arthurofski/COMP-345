@@ -153,7 +153,6 @@ Deck::~Deck() {
         delete card;
     }
     _cards.clear();
-    cout << "Deck destructor called" << endl;
 }
 
 Deck& Deck::operator=(const Deck& assign) {
@@ -223,7 +222,6 @@ Hand::~Hand() {
         delete card;
     }
     _cardsInHand.clear();
-    cout << "Hand destructor called" << endl;
 }
 
 Hand& Hand::operator=(const Hand& assign) {

@@ -29,6 +29,8 @@ class Territory {
         void setContinent(Continent* c);
 
         std::string getName() const; //name getter
+        Player* getOwner() const;
+        void setOwner(Player* player);
 
         Territory& operator=(const Territory& other);
         friend std::ostream& operator<<(std::ostream& os, const Territory& territory);
@@ -39,7 +41,7 @@ class Continent {
         std::string* name;
         int* bonus;
         std::vector<Territory*>* territories;
-        
+
         //Default constructor, parameterized constructor, copy constructor
         Continent();
         Continent(std::string n, int b);

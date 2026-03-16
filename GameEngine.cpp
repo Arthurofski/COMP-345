@@ -207,7 +207,11 @@ void GameEngine::setState(state newState) {
     notify(this);
 }
 //get player count
-int GameEngine::getPlayerCount() const {return players->size();}
+int GameEngine::getPlayerCount() const { return players->size(); }
+
+// get raw player list (non-owning)
+std::vector<Player*>* GameEngine::getPlayers() const { return players; }
+
 // Stream insertion operator for GameEngine
 std::ostream& operator<<(std::ostream& os, const GameEngine& engine) {
     os << "GameEngine State: " << stateToString(*engine.currentState) << "\nPlayers: " << engine.players->size();
@@ -253,11 +257,12 @@ void GameEngine::assignCountries(){
 }
 
 //winning and elimination methods
+// BUG FIX 1: The original required the last player to own every territory on
+// the map. This breaks Demo 7 where Bob starts with 0 territories and is
+// eliminated immediately — Alice never "captures" territories so the old
+// check never fires. Being the last player standing is the correct win condition.
 bool GameEngine::checkWinCondition() const {
-    if (players->size() != 1) return false;
-    // One player remains — check they own everything
-    int total = (int)map->territories->size();
-    return (int)(*players)[0]->getTerritories()->size() == total;
+    return players->size() == 1;
 }
 void GameEngine::removeEliminatedPlayers() {
     auto it = players->begin();
@@ -391,6 +396,18 @@ void GameEngine::mainGameLoop(){
  
     std::cout << "\n========== MAIN GAME LOOP ==========\n";
     setState(AssignReinforcement);
+
+    // BUG FIX 2: Eliminate any players who already start with 0 territories
+    // (e.g. Demo 7 where Bob is given no territories before the loop begins).
+    // Without this, checkWinCondition() is never evaluated before round 1,
+    // so the loop runs with a "dead" player still in the list.
+    removeEliminatedPlayers();
+    if (checkWinCondition()) {
+        setState(Win);
+        std::cout << "\n*** " << *(*players)[0]->getName()
+                  << " wins the game! (opponent had no territories) ***\n";
+        return;
+    }
  
     int round = 0;
     const int MAX_ROUNDS = 10;  // safety cap to prevent infinite loops in demo

@@ -87,9 +87,8 @@ ostream& operator<<(ostream& os, const CommandProcessor& cp) {
 }
 
 // Reads command, validates it, then creates a command object and saves it in the command list
-string CommandProcessor::readCommand(GameEngine* ge) {
+std::string CommandProcessor::readCommand(GameEngine* ge) {
 	std::string line, cmd;
-	Command* new_cmd;
     while (true) {
         std::cout << "[" << ge->getCurrentState() << "] > ";
         if (!std::getline(std::cin, line)) break; // EOF / pipe end
@@ -103,16 +102,13 @@ string CommandProcessor::readCommand(GameEngine* ge) {
 			saveCommand(new_cmd);
 			break;
 		}
-		else {
+		else
 			cout << "\nInvalid command!\n";
-			new_cmd->saveEffect("Invalid command");
-		}
 	}
 	if (!line.empty())
 		return line;
 
 	if (cmd == "replay") {
-		new_cmd->saveEffect("Started a new game");
 		std::cout << "Starting new game...\n";
 		delete ge;
 		ge = new GameEngine();
@@ -120,7 +116,6 @@ string CommandProcessor::readCommand(GameEngine* ge) {
 	}
 
 	if (cmd == "quit") {
-		new_cmd->saveEffect("Quit game");
 		std::cout << "Quitting game...\n";
 		exit(0);
 	}

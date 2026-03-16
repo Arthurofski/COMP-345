@@ -72,7 +72,11 @@ public:
     std::string getCurrentState() const;
     int getPlayerCount() const;
 
+    // Access raw player list (caller must not delete)
+    std::vector<Player*>* getPlayers() const;
+
     void setState(state newState);
+    // std::string stringToLog() const override;
 
 private:
     // currentState pointer

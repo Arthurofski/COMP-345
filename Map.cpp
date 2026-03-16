@@ -50,6 +50,15 @@ void Territory::addNeighbour(Territory* t) {
 string Territory::getName() const {
     return *name;
 }
+
+Player* Territory::getOwner() const {
+    return owner;
+}
+
+void Territory::setOwner(Player* player) {
+    owner = player;
+}
+
 Territory& Territory::operator=(const Territory& other) {
     if (this != &other) {
         delete name;

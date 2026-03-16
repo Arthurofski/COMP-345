@@ -9,6 +9,9 @@ Player::Player(std::string n) {
     hand = new Hand();
     orders = new OrdersList();
     reinforcementPool = new int(0);
+    negotiatedPlayers = new std::vector<Player*>();
+    conqueredTerritoryThisTurn = new bool(false);
+    receivedCardThisTurn = new bool(false);
 }
 
 // Copy constructor (deep copy)
@@ -18,6 +21,9 @@ Player::Player(const Player& other) {
     hand = new Hand(*(other.hand));
     orders = new OrdersList(*(other.orders));
     reinforcementPool = new int(*other.reinforcementPool);
+    negotiatedPlayers = new std::vector<Player*>(*other.negotiatedPlayers);
+    conqueredTerritoryThisTurn = new bool(*other.conqueredTerritoryThisTurn);
+    receivedCardThisTurn = new bool(*other.receivedCardThisTurn);
 }
 
 // Assignment operator
@@ -28,12 +34,18 @@ Player& Player::operator=(const Player& other) {
         delete hand;
         delete orders;
         delete reinforcementPool;
+        delete negotiatedPlayers;
+        delete conqueredTerritoryThisTurn;
+        delete receivedCardThisTurn;
         
         name = new std::string(*(other.name));
         territories = new std::vector<Territory*>(*(other.territories));
         hand = new Hand(*(other.hand));
         orders = new OrdersList(*(other.orders));
         reinforcementPool = new int(*other.reinforcementPool);
+        negotiatedPlayers = new std::vector<Player*>(*other.negotiatedPlayers);
+        conqueredTerritoryThisTurn = new bool(*other.conqueredTerritoryThisTurn);
+        receivedCardThisTurn = new bool(*other.receivedCardThisTurn);
     }
     return *this;
 }
@@ -45,12 +57,18 @@ Player::~Player() {
     delete hand;         
     delete orders;       
     delete reinforcementPool;
+    delete negotiatedPlayers;
+    delete conqueredTerritoryThisTurn;
+    delete receivedCardThisTurn;
     // Set to nullptr to prevent dangling pointers
     name = nullptr;
     territories = nullptr;
     hand = nullptr;
     orders = nullptr;
     reinforcementPool = nullptr;
+    negotiatedPlayers = nullptr;
+    conqueredTerritoryThisTurn = nullptr;
+    receivedCardThisTurn = nullptr;
     
 }
 
@@ -86,6 +104,53 @@ void Player::addTerritory(Territory* t) {
 void Player::removeTerritory(Territory* t){
     territories->erase(
         std::remove(territories->begin(),territories->end(),t),territories->end());
+}
+
+bool Player::ownsTerritory(const Territory* t) const {
+    if (!t) return false;
+    for (Territory* terr : *territories) {
+        if (terr == t) return true;
+    }
+    return false;
+}
+
+void Player::addNegotiatedPlayer(Player* other) {
+    if (!other || other == this) return;
+    for (Player* p : *negotiatedPlayers) {
+        if (p == other) return;
+    }
+    negotiatedPlayers->push_back(other);
+}
+
+bool Player::isNegotiatingWith(const Player* other) const {
+    if (!other) return false;
+    for (Player* p : *negotiatedPlayers) {
+        if (p == other) return true;
+    }
+    return false;
+}
+
+void Player::clearNegotiations() {
+    negotiatedPlayers->clear();
+}
+
+void Player::markConqueredTerritory() {
+    *conqueredTerritoryThisTurn = true;
+}
+
+bool Player::awardCardIfEligible(Deck* deck) {
+    if (!deck) return false;
+    if (*conqueredTerritoryThisTurn && !*receivedCardThisTurn) {
+        deck->draw(hand);
+        *receivedCardThisTurn = true;
+        return true;
+    }
+    return false;
+}
+
+void Player::resetTurnFlags() {
+    *conqueredTerritoryThisTurn = false;
+    *receivedCardThisTurn = false;
 }
 // Next methods are arbitrary implementations 
 // Defend method
@@ -166,7 +231,7 @@ void Player::issueOrder(Deck* deck) {
  
         if (*src->armies > 1) {
             int attacking = *src->armies / 2;
-            orders->add(new Advance(attacking, src->getName(), tgt->getName()));   
+            orders->add(new Advance(attacking, this, src, tgt));   
             std::cout << "  [" << *name << "] Advance " << attacking
                       << " from " << src->getName() << " -> " << tgt->getName() << "\n";
             issuedAdvance = true;
@@ -181,7 +246,7 @@ void Player::issueOrder(Deck* deck) {
         }
         if (strongest != weakest && *strongest->armies > 1) {
             int moving = *strongest->armies / 2;
-            orders->add(new Advance(moving, strongest->getName(), weakest->getName()));
+            orders->add(new Advance(moving, this, strongest, weakest));
             std::cout << "  [" << *name << "] Reinforce " << moving
                       << " from " << strongest->getName()
                       << " -> " << weakest->getName() << "\n";

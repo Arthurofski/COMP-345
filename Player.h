@@ -39,6 +39,15 @@ public:
     void addReinforcementPool(int n);
     void addTerritory(Territory* t);
     void removeTerritory(Territory *t);
+    bool ownsTerritory(const Territory* t) const;
+
+    void addNegotiatedPlayer(Player* other);
+    bool isNegotiatingWith(const Player* other) const;
+    void clearNegotiations();
+
+    void markConqueredTerritory();
+    bool awardCardIfEligible(Deck* deck);
+    void resetTurnFlags();
 
 private:
     std::string* name;
@@ -46,6 +55,9 @@ private:
     Hand* hand;
     OrdersList* orders;
     int* reinforcementPool;
+    std::vector<Player*>* negotiatedPlayers;
+    bool* conqueredTerritoryThisTurn;
+    bool* receivedCardThisTurn;
 };
 
 #endif

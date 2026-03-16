@@ -83,9 +83,9 @@ int main() {
 
     // ---- issueOrder() ----
     std::cout << "\nissueOrder() (creates a real Deploy order):" << std::endl;
-    player1->issueOrder();
-    player1->issueOrder();
-    player2->issueOrder();
+    player1->issueOrder(nullptr);
+    player1->issueOrder(nullptr);
+    player2->issueOrder(nullptr);
 
     std::cout << "\nPlayer1's OrdersList:" << std::endl;
     std::cout << *player1->getOrders() << std::endl;

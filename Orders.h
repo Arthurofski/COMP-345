@@ -40,6 +40,7 @@ std::ostream& operator<<(std::ostream& os, const Order& order);
 class Player;
 class Territory;
 
+// Deploy armies from issuer reinforcement pool to one owned territory.
 class Deploy : public Order {
 private:
     int* _armies;
@@ -61,15 +62,18 @@ public:
     bool   validate()     const override;
     void   execute()            override;
 };
+
+// Move armies between adjacent territories; can trigger combat and conquest.
 class Advance : public Order {
 private:
     int* _armies;
-    std::string* _sourceTerritoryName;
-    std::string* _targetTerritoryName;
+    Player* _player;      // non-owning issuer
+    Territory* _source;   // non-owning source territory
+    Territory* _target;   // non-owning target territory
 
 public:
     Advance();
-    Advance(int armies, const std::string& sourceTerritoryName, const std::string& targetTerritoryName);
+    Advance(int armies, Player* player, Territory* source, Territory* target);
     Advance(const Advance& other);
     Advance& operator=(const Advance& other);
     ~Advance() override;
@@ -80,12 +84,15 @@ public:
 
 
 };
+
+// Halve armies on an adjacent enemy territory.
 class Bomb : public Order {
 private:
-    std::string* _targetTerritoryName;
+    Player* _player;      // non-owning issuer
+    Territory* _target;   // non-owning target territory
 public:
     Bomb();
-    Bomb(const std::string& targetTerritoryName);
+    Bomb(Player* player, Territory* targetTerritory);
     Bomb(const Bomb& other);
     Bomb& operator=(const Bomb& other);
     ~Bomb() override;
@@ -97,12 +104,14 @@ public:
 
 };
 
+// Double armies on one owned territory and transfer it to Neutral.
 class Blockade : public Order {
-    private:
-    std::string* _targetTerritoryName;
+private:
+    Player* _player;      // non-owning issuer
+    Territory* _target;   // non-owning target territory
 public:
     Blockade();
-    Blockade(const std::string& targetTerritoryName);
+    Blockade(Player* player, Territory* targetTerritory);
     Blockade(const Blockade& other);
     Blockade& operator=(const Blockade& other);
     ~Blockade() override;
@@ -114,14 +123,16 @@ public:
 
 };
 
+// Move armies between two owned territories without adjacency requirement.
 class Airlift : public Order {
 private:
     int* _armies;
-    std::string* _sourceTerritoryName;
-    std::string* _targetTerritoryName;
+    Player* _player;      // non-owning issuer
+    Territory* _source;   // non-owning source territory
+    Territory* _target;   // non-owning target territory
 public:
     Airlift();
-    Airlift(int armies, const std::string& sourceTerritoryName, const std::string& targetTerritoryName);
+    Airlift(int armies, Player* player, Territory* sourceTerritory, Territory* targetTerritory);
     Airlift(const Airlift& other);
     Airlift& operator=(const Airlift& other);
     ~Airlift() override;
@@ -133,13 +144,15 @@ public:
 
 };
 
+// Prevent attacks between issuer and target player for the current turn.
 class Negotiate : public Order {
 private:
-    std::string* _targetPlayerName;
+    Player* _player;      // non-owning issuer
+    Player* _targetPlayer; // non-owning target player
 
 public:
     Negotiate();
-    Negotiate(const std::string& targetPlayerName);
+    Negotiate(Player* player, Player* targetPlayer);
     Negotiate(const Negotiate& other);
     Negotiate& operator=(const Negotiate& other);
     ~Negotiate() override;

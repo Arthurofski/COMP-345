@@ -65,8 +65,8 @@ void Cards::play(Hand* hand, Deck* deck, Player* player) {
         case BOMB: {
             // Bomb an adjacent enemy territory
             vector<Territory*>* attack = player->toAttack();
-            string tgt = (!attack->empty()) ? attack->front()->getName() : "EnemyTerritory";
-            order = new Bomb(tgt);
+            Territory* tgt = (!attack->empty()) ? attack->front() : nullptr;
+            order = new Bomb(player, tgt);
             delete attack;
             break;
         }
@@ -90,15 +90,16 @@ void Cards::play(Hand* hand, Deck* deck, Player* player) {
         case BLOCKADE: {
             // Blockade the player's most-threatened territory
             vector<Territory*>* defend = player->toDefend();
-            string tgt = (!defend->empty()) ? defend->front()->getName() : "NoTerritory";
-            order = new Blockade(tgt);
+            Territory* tgt = (!defend->empty()) ? defend->front() : nullptr;
+            order = new Blockade(player, tgt);
             delete defend;
             break;
         }
         case AIRLIFT: {
             // Airlift from strongest to weakest owned territory
             vector<Territory*>* defend = player->toDefend();
-            string src = "Source", tgt = "Target";
+            Territory* src = nullptr;
+            Territory* tgt = nullptr;
             int moving = 5;
             if (defend->size() >= 2) {
                 Territory* strongest = defend->front();
@@ -107,21 +108,24 @@ void Cards::play(Hand* hand, Deck* deck, Player* player) {
                     if (*t->armies > *strongest->armies) strongest = t;
                     if (*t->armies < *weakest->armies)   weakest   = t;
                 }
-                src    = strongest->getName();
-                tgt    = weakest->getName();
+                src    = strongest;
+                tgt    = weakest;
                 moving = *strongest->armies / 2;
+            } else if (defend->size() == 1) {
+                src = defend->front();
+                tgt = defend->front();
             }
-            order = new Airlift(moving, src, tgt);
+            order = new Airlift(moving, player, src, tgt);
             delete defend;
             break;
         }
         case DIPLOMACY: {
             // Negotiate with a random neighbour's owner
             vector<Territory*>* attack = player->toAttack();
-            string tgt = "OpponentPlayer";
+            Player* tgt = nullptr;
             if (!attack->empty() && attack->front()->owner)
-                tgt = *attack->front()->owner->getName();
-            order = new Negotiate(tgt);
+                tgt = attack->front()->owner;
+            order = new Negotiate(player, tgt);
             delete attack;
             break;
         }

@@ -1,6 +1,7 @@
 #include "Orders.h"
 #include "Player.h"  // provides full Player and Territory definitions for validate/execute
 #include <iostream>
+#include <cstdlib>
 using namespace std;
 
 Order::Order(){
@@ -179,211 +180,328 @@ void Deploy::execute() {
 }
 
 
+namespace {
+bool areAdjacent(const Territory* a, const Territory* b) {
+    if (!a || !b || !a->neighbours) return false;
+    for (Territory* n : *a->neighbours) {
+        if (n == b) return true;
+    }
+    return false;
+}
+
+bool isAdjacentToAnyOwned(const Player* player, const Territory* target) {
+    if (!player || !target) return false;
+    std::vector<Territory*>* owned = player->getTerritories();
+    if (!owned) return false;
+    for (Territory* t : *owned) {
+        if (areAdjacent(t, target)) return true;
+    }
+    return false;
+}
+}
+
 Advance::Advance()
     : Order("Advance"),
       _armies(new int(0)),
-      _sourceTerritoryName(new std::string("")),
-      _targetTerritoryName(new std::string("")) {}
+      _player(nullptr),
+      _source(nullptr),
+      _target(nullptr) {}
 
-Advance::Advance(int armies, const std::string& sourceTerritoryName, const std::string& targetTerritoryName)
+Advance::Advance(int armies, Player* player, Territory* source, Territory* target)
     : Order("Advance"),
       _armies(new int(armies)),
-      _sourceTerritoryName(new std::string(sourceTerritoryName)),
-      _targetTerritoryName(new std::string(targetTerritoryName)) {}
+      _player(player),
+      _source(source),
+      _target(target) {}
 
 Advance::Advance(const Advance& other)
     : Order(other),
       _armies(new int(*other._armies)),
-      _sourceTerritoryName(new std::string(*other._sourceTerritoryName)),
-      _targetTerritoryName(new std::string(*other._targetTerritoryName)) {}
+      _player(other._player),
+      _source(other._source),
+      _target(other._target) {}
 
 Advance& Advance::operator=(const Advance& other) {
     if (this == &other) return *this;
     Order::operator=(other);
     *_armies = *other._armies;
-    *_sourceTerritoryName = *other._sourceTerritoryName;
-    *_targetTerritoryName = *other._targetTerritoryName;
+    _player = other._player;
+    _source = other._source;
+    _target = other._target;
     return *this;
 }
 
 Advance::~Advance() {
     delete _armies;
-    delete _sourceTerritoryName;
-    delete _targetTerritoryName;
 }
 
 Order* Advance::clone() const { return new Advance(*this); }
 
 bool Advance::validate() const {
-    // Placeholder; later: check adjacency, source owned, enough armies, etc.
-    return (*_armies >= 0);
+    if (!_player || !_source || !_target) return false;
+    if (*_armies <= 0) return false;
+    if (_source->owner != _player) return false;
+    if (*_source->armies < *_armies) return false;
+    if (!areAdjacent(_source, _target)) return false;
+    return true;
 }
 
 void Advance::execute() {
+    notify(this);
     if (!validate()) {
-        cout << "Invalid Advance order: " << *this << endl;
+        cout << "Invalid Advance order." << endl;
         return;
     }
-    cout << "Executing Advance: " << *_armies << " armies from " << *_sourceTerritoryName
-         << " to " << *_targetTerritoryName << endl;
+
+    if (_target->owner && _player->isNegotiatingWith(_target->owner)) {
+        cout << "Advance blocked by negotiate effect." << endl;
+        return;
+    }
+
+    *_source->armies -= *_armies;
+
+    if (_target->owner == _player) {
+        *_target->armies += *_armies;
+        cout << "Advanced " << *_armies << " armies from " << _source->getName()
+             << " to " << _target->getName() << endl;
+        return;
+    }
+
+    int attackers = *_armies;
+    int defenders = *_target->armies;
+
+    while (attackers > 0 && defenders > 0) {
+        int attackersAtStart = attackers;
+        int defendersAtStart = defenders;
+        int killsByAttackers = 0;
+        int killsByDefenders = 0;
+
+        for (int i = 0; i < attackersAtStart; ++i) {
+            if ((rand() % 100) < 60) ++killsByAttackers;
+        }
+        for (int i = 0; i < defendersAtStart; ++i) {
+            if ((rand() % 100) < 70) ++killsByDefenders;
+        }
+
+        defenders -= (killsByAttackers < defenders ? killsByAttackers : defenders);
+        attackers -= (killsByDefenders < attackers ? killsByDefenders : attackers);
+    }
+
+    if (defenders <= 0 && attackers > 0) {
+        Player* defender = _target->owner;
+        if (defender) defender->removeTerritory(_target);
+        _player->addTerritory(_target);
+        *_target->armies = attackers;
+        _player->markConqueredTerritory();
+        cout << "Advance conquered " << _target->getName() << " with " << attackers
+             << " surviving armies." << endl;
+    } else {
+        *_target->armies = defenders;
+        cout << "Advance attack failed on " << _target->getName()
+             << ". Defenders left: " << defenders << endl;
+    }
 }
 
 Bomb::Bomb()
     : Order("Bomb"),
-      _targetTerritoryName(new std::string("")) {}
+      _player(nullptr),
+      _target(nullptr) {}
 
-Bomb::Bomb(const std::string& targetTerritoryName)
+Bomb::Bomb(Player* player, Territory* targetTerritory)
     : Order("Bomb"),
-      _targetTerritoryName(new std::string(targetTerritoryName)) {}
+      _player(player),
+      _target(targetTerritory) {}
 
 Bomb::Bomb(const Bomb& other)
     : Order(other),
-      _targetTerritoryName(new std::string(*other._targetTerritoryName)) {}
+      _player(other._player),
+      _target(other._target) {}
 
 Bomb& Bomb::operator=(const Bomb& other) {
     if (this == &other) return *this;
     Order::operator=(other);
-    *_targetTerritoryName = *other._targetTerritoryName;
+    _player = other._player;
+    _target = other._target;
     return *this;
 }
 
-Bomb::~Bomb() {
-    delete _targetTerritoryName;
-}
+Bomb::~Bomb() {}
 
 Order* Bomb::clone() const { return new Bomb(*this); }
 
 bool Bomb::validate() const {
-    return !_targetTerritoryName->empty();
+    if (!_player || !_target) return false;
+    if (_target->owner == _player) return false;
+    if (!isAdjacentToAnyOwned(_player, _target)) return false;
+    return true;
 }
 
 void Bomb::execute() {
+    notify(this);
     if (!validate()) {
-        cout << "Invalid Bomb order: " << *this << endl;
+        cout << "Invalid Bomb order." << endl;
         return;
     }
-    cout << "Executing Bomb on " << *_targetTerritoryName << endl;
+
+    if (_target->owner && _player->isNegotiatingWith(_target->owner)) {
+        cout << "Bomb blocked by negotiate effect." << endl;
+        return;
+    }
+
+    *_target->armies /= 2;
+    cout << "Bombed " << _target->getName() << ". Armies now: " << *_target->armies << endl;
 }
 
 Blockade::Blockade()
     : Order("Blockade"),
-      _targetTerritoryName(new std::string("")) {}
+      _player(nullptr),
+      _target(nullptr) {}
 
-Blockade::Blockade(const std::string& targetTerritoryName)
+Blockade::Blockade(Player* player, Territory* targetTerritory)
     : Order("Blockade"),
-      _targetTerritoryName(new std::string(targetTerritoryName)) {}
+      _player(player),
+      _target(targetTerritory) {}
 
 Blockade::Blockade(const Blockade& other)
     : Order(other),
-      _targetTerritoryName(new std::string(*other._targetTerritoryName)) {}
+      _player(other._player),
+      _target(other._target) {}
 
 Blockade& Blockade::operator=(const Blockade& other) {
     if (this == &other) return *this;
     Order::operator=(other);
-    *_targetTerritoryName = *other._targetTerritoryName;
+    _player = other._player;
+    _target = other._target;
     return *this;
 }
 
-Blockade::~Blockade() {
-    delete _targetTerritoryName;
-}
+Blockade::~Blockade() {}
 
 Order* Blockade::clone() const { return new Blockade(*this); }
 
 bool Blockade::validate() const {
-    return !_targetTerritoryName->empty();
+    if (!_player || !_target) return false;
+    return _target->owner == _player;
 }
+
 void Blockade::execute() {
+    notify(this);
     if (!validate()) {
-        cout << "Invalid Blockade order: " << *this << endl;
+        cout << "Invalid Blockade order." << endl;
         return;
     }
-    cout << "Executing Blockade on " << *_targetTerritoryName << endl;
+
+    static Player neutralPlayer("Neutral");
+
+    *_target->armies *= 2;
+    _player->removeTerritory(_target);
+    neutralPlayer.addTerritory(_target);
+
+    cout << "Blockade on " << _target->getName()
+         << ": armies doubled and ownership transferred to Neutral." << endl;
 }
 
 Airlift::Airlift()
     : Order("Airlift"),
       _armies(new int(0)),
-      _sourceTerritoryName(new std::string("")),
-      _targetTerritoryName(new std::string("")) {}
+      _player(nullptr),
+      _source(nullptr),
+      _target(nullptr) {}
 
-Airlift::Airlift(int armies, const std::string& sourceTerritoryName, const std::string& targetTerritoryName)
+Airlift::Airlift(int armies, Player* player, Territory* sourceTerritory, Territory* targetTerritory)
     : Order("Airlift"),
       _armies(new int(armies)),
-      _sourceTerritoryName(new std::string(sourceTerritoryName)),
-      _targetTerritoryName(new std::string(targetTerritoryName)) {}
+      _player(player),
+      _source(sourceTerritory),
+      _target(targetTerritory) {}
 
 Airlift::Airlift(const Airlift& other)
     : Order(other),
       _armies(new int(*other._armies)),
-      _sourceTerritoryName(new std::string(*other._sourceTerritoryName)),
-      _targetTerritoryName(new std::string(*other._targetTerritoryName)) {}
+      _player(other._player),
+      _source(other._source),
+      _target(other._target) {}
 
 Airlift& Airlift::operator=(const Airlift& other) {
     if (this == &other) return *this;
     Order::operator=(other);
     *_armies = *other._armies;
-    *_sourceTerritoryName = *other._sourceTerritoryName;
-    *_targetTerritoryName = *other._targetTerritoryName;
+    _player = other._player;
+    _source = other._source;
+    _target = other._target;
     return *this;
 }
 
 Airlift::~Airlift() {
     delete _armies;
-    delete _sourceTerritoryName;
-    delete _targetTerritoryName;
 }
 
 Order* Airlift::clone() const { return new Airlift(*this); }
 
 bool Airlift::validate() const {
-    return (*_armies >= 0) && !_sourceTerritoryName->empty() && !_targetTerritoryName->empty();
+    if (!_player || !_source || !_target) return false;
+    if (*_armies <= 0) return false;
+    if (_source->owner != _player || _target->owner != _player) return false;
+    if (*_source->armies < *_armies) return false;
+    return true;
 }
 
 void Airlift::execute() {
+    notify(this);
     if (!validate()) {
-        cout << "Invalid Airlift order: " << *this << endl;
+        cout << "Invalid Airlift order." << endl;
         return;
     }
-    cout << "Executing Airlift: " << *_armies << " armies from " << *_sourceTerritoryName
-         << " to " << *_targetTerritoryName << endl;
+
+    *_source->armies -= *_armies;
+    *_target->armies += *_armies;
+    cout << "Airlifted " << *_armies << " armies from " << _source->getName()
+         << " to " << _target->getName() << endl;
 }
 
 Negotiate::Negotiate()
     : Order("Negotiate"),
-      _targetPlayerName(new std::string("")) {}
+      _player(nullptr),
+      _targetPlayer(nullptr) {}
 
-Negotiate::Negotiate(const std::string& targetPlayerName)
+Negotiate::Negotiate(Player* player, Player* targetPlayer)
     : Order("Negotiate"),
-      _targetPlayerName(new std::string(targetPlayerName)) {}
+      _player(player),
+      _targetPlayer(targetPlayer) {}
 
 Negotiate::Negotiate(const Negotiate& other)
     : Order(other),
-      _targetPlayerName(new std::string(*other._targetPlayerName)) {}
+      _player(other._player),
+      _targetPlayer(other._targetPlayer) {}
 
 Negotiate& Negotiate::operator=(const Negotiate& other) {
     if (this == &other) return *this;
     Order::operator=(other);
-    *_targetPlayerName = *other._targetPlayerName;
+    _player = other._player;
+    _targetPlayer = other._targetPlayer;
     return *this;
 }
 
-Negotiate::~Negotiate() {
-    delete _targetPlayerName;
-}
+Negotiate::~Negotiate() {}
 
 Order* Negotiate::clone() const { return new Negotiate(*this); }
 
 bool Negotiate::validate() const {
-    return !_targetPlayerName->empty();
+    if (!_player || !_targetPlayer) return false;
+    return _player != _targetPlayer;
 }
 
 void Negotiate::execute() {
+    notify(this);
     if (!validate()) {
-        cout << "Invalid Negotiate order: " << *this << endl;
+        cout << "Invalid Negotiate order." << endl;
         return;
     }
-    cout << "Executing Negotiate with player " << *_targetPlayerName << endl;
+
+    _player->addNegotiatedPlayer(_targetPlayer);
+    _targetPlayer->addNegotiatedPlayer(_player);
+    cout << "Negotiate set between " << *_player->getName()
+         << " and " << *_targetPlayer->getName() << endl;
 }
 
 

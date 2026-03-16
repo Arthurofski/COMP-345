@@ -573,20 +573,7 @@ static void demo_main_game(){
 int main() {
     srand(42);
 
-    cout << "============================================================\n"
-         << "     Warzone GameEngine Driver  -  All 6 Criteria\n"
-         << "============================================================\n";
-
-    demo_reinforcement(); // (1) correct reinforcement amounts
-    demo_deployOnly();    // (2) deploy-only while pool > 0
-    demo_advance();       // (3) advance to attack and defend
-    demo_cardPlaying();   // (4) card playing issues orders
-    demo_elimination();   // (5) player with 0 territories eliminated
-    demo_gameEnd();       // (6) game ends when one player owns everything
     
-    cout << "\n============================================================\n"
-         << "  All 6 criteria demonstrated and asserted successfully.\n"
-         << "============================================================\n";
 
     demo_main_game();   //(7) Main game demo demonstrating main game loop works + game Startup phase works.
     return 0;

@@ -6,6 +6,28 @@
 // Default command constructor
 Command::Command() {}
 
+// Command destructor
+Command::~Command() {}
+
+// Copy constructor
+Command::Command(const Command& other) {
+    this->command = other.command;
+    this->effect  = other.effect;
+}
+
+// Assignment operator
+Command& Command::operator=(const Command& other) {
+    if (this != &other) 
+        this->command = other.command;
+    return *this;
+}
+
+// Stream insertion operator 
+ostream& operator<<(ostream& os, const Command& cmd) {
+    os << "Command: " << cmd.command;
+    return os;
+}
+
 // Command constructor with a valid command
 Command::Command(string command) {
 	this->command = command;
@@ -25,7 +47,44 @@ string Command::stringToLog() const {
 
 // ----------------------COMMAND PROCESSOR CLASS IMPLEMENTATION------------------------
 
+// CommandProcessor default constructor
 CommandProcessor::CommandProcessor() {}
+
+// CommandProcessor destructor
+CommandProcessor::~CommandProcessor() {
+    for (Command* cmd : command_list) {
+        delete cmd;
+    }
+    command_list.clear();
+}
+
+CommandProcessor::CommandProcessor(const CommandProcessor& other) {
+    for (Command* cmd : other.command_list) {
+        command_list.push_back(new Command(*cmd)); 
+    }
+}
+
+CommandProcessor& CommandProcessor::operator=(const CommandProcessor& other) {
+    if (this != &other) {
+        for (Command* cmd : command_list) {
+            delete cmd;
+        }
+        command_list.clear();
+
+        for (Command* cmd : other.command_list) {
+            command_list.push_back(new Command(*cmd));
+        }
+    }
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const CommandProcessor& cp) {
+    os << "CommandProcessor [" << cp.command_list.size() << " commands]:\n";
+    for (Command* cmd : cp.command_list) {
+        os << "  - " << *cmd << "\n";
+    }
+    return os;
+}
 
 // Reads command, validates it, then creates a command object and saves it in the command list
 string CommandProcessor::readCommand(GameEngine* ge) {
@@ -107,25 +166,47 @@ string CommandProcessor::stringToLog() const {
 // -----------------------FILE LINE READER CLASS IMPLEMENTATION------------------------
 
 FileLineReader::FileLineReader(const std::string& filename) : filename(filename) {
-    while (true) {
-		file.open(filename);
-		if (!file.is_open())
-			cout << "Could not open file: " << filename << endl;
-		else {
-			cout << "Opened file: " << filename << endl;
-			break;
-		}
-	}
+	file.open(filename);
+	if (!file.is_open())
+		cout << "Could not open file: " << filename << endl;
+	else 
+		cout << "Opened file: " << filename << endl;
 }
 
 FileLineReader::~FileLineReader() {
     if (file.is_open()) file.close();
 }
 
+FileLineReader::FileLineReader(const FileLineReader& other) : filename(other.filename) {
+    file.open(filename); 
+    if (!file.is_open())
+		cout << "Could not open file: " << filename << endl;
+	else 
+		cout << "Opened file: " << filename << endl;
+}
+
+FileLineReader& FileLineReader::operator=(const FileLineReader& other) {
+    if (this != &other) {
+        if (file.is_open()) file.close();
+        filename = other.filename;
+        file.open(filename);
+        if (!file.is_open())
+			cout << "Could not open file: " << filename << endl;
+		else 
+			cout << "Opened file: " << filename << endl;
+    }
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const FileLineReader& flr) {
+    os << "FileLineReader [file: " << flr.filename << "]";
+    return os;
+}
+
 std::string FileLineReader::readNextLine() {
     std::string line;
     while (std::getline(file, line)) {
-        if (!line.empty()) return line;  // skip blank lines
+        if (!line.empty()) return line;
     }
     return "";
 }
@@ -135,6 +216,25 @@ bool FileLineReader::notDone() const {
 }
 
 // ----------------FILE COMMAND PROCESSOR ADAPTER CLASS IMPLEMENTATION------------------
+
+FileCommandProcessorAdapter::FileCommandProcessorAdapter(const FileCommandProcessorAdapter& other) : CommandProcessor(other) {  
+    this->fileReader = new FileLineReader(*other.fileReader); 
+}
+
+FileCommandProcessorAdapter& FileCommandProcessorAdapter::operator=(const FileCommandProcessorAdapter& other) {
+    if (this != &other) {
+        CommandProcessor::operator=(other); 
+        delete fileReader;
+        fileReader = new FileLineReader(*other.fileReader); 
+    }
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const FileCommandProcessorAdapter& fcpa) {
+    os << "FileCommandProcessorAdapter [file: " << *fcpa.fileReader << "]\n";
+    os << static_cast<const CommandProcessor&>(fcpa); 
+	return os;
+}
 
 FileCommandProcessorAdapter::FileCommandProcessorAdapter(const std::string& filename) {
     fileReader = new FileLineReader(filename);  

@@ -73,7 +73,6 @@ public:
     int getPlayerCount() const;
 
     void setState(state newState);
-    std::string stringToLog() const override;
 
 private:
     // currentState pointer

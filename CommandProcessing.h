@@ -27,7 +27,7 @@ public:
 class CommandProcessor : public Subject, public ILoggable {
 private:
 	vector<Command*> command_list;
-	void readCommand(GameEngine* ge);
+	// void readCommand(GameEngine* ge);
 	string readCommand(GameEngine* ge);
 	void saveCommand(Command* new_cmd);
 
@@ -35,7 +35,7 @@ public:
 	CommandProcessor();
 	string getCommand(GameEngine* ge);
 	bool validate(string cmd_input, GameEngine* ge);
-	void saveCommand(Command* new_cmd);
+	// void saveCommand(Command* new_cmd);
 	std::string stringToLog() const override;
 };
 

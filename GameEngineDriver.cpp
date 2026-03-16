@@ -132,7 +132,7 @@ static void countOrderTypes(Player* p, int& deploys, int& others) {
 // Condition 1: Reinforcement - correct army counts in three cases
 static void demo_reinforcement() {
     cout << "\n============================================================\n"
-         << " DEMO 1 [Criterion 1]: Reinforcement army calculations\n"
+         << " DEMO 1 [Condition 1]: Reinforcement army calculations\n"
          << "============================================================\n";
 
     // --- Case (a): few territories -> minimum 3 ---
@@ -157,11 +157,11 @@ static void demo_reinforcement() {
         cout << "    Alice owns 1 territory, 1/3 = 0, floor applied -> pool = "
              << pool << " (expected 3)\n";
         assert(pool == 3);
-        cout << "    [ASSERT] PASS: minimum 3 enforced\n";
+        cout << "    PASS: minimum 3 enforced\n";
     }
 
     // --- Case (b): many territories -> territories / 3 > minimum ---
-    cout << "\n  Case B: 12 territories owned -> 12/3 = 4 armies (above minimum)\n";
+    cout << "\n  Case B: 12 territories owned \n";
     {
         // Build a 13-territory chain map
         Map* m = new Map();
@@ -195,10 +195,10 @@ static void demo_reinforcement() {
 
         int pool = bob->getReinforcementPool();
         int expected = max(3, 12/3); // = 4
-        cout << "    Bob owns 12 territories, 12/3 = 4 -> pool = " << pool
+        cout << "    Bob owns 12 territories, pool = " << pool
              << " (expected " << expected << ")\n";
         assert(pool == expected);
-        cout << "    [ASSERT] PASS: territories/3 calculation correct\n";
+        cout << "   PASS: territories/3 calculation correct\n";
     }
 
     // --- Case (c): continent bonus added on top of base ---
@@ -234,14 +234,14 @@ static void demo_reinforcement() {
              << " (expected 8 = 3 base + 5 bonus)\n";
         assert(carolPool == 6);
         assert(davePool  == 8);
-        cout << "    [ASSERT] PASS: continent bonuses applied correctly\n";
+        cout << "   PASS: continent bonuses applied correctly\n";
     }
 }
 
 // Condition 2: Only Deploy orders issued while pool > 0
 static void demo_deployOnly() {
     cout << "\n============================================================\n"
-         << " DEMO 2 [Criterion 2]: Only Deploy orders while pool > 0\n"
+         << " DEMO 2 [Condition 2]: Only Deploy orders while pool > 0\n"
          << "============================================================\n";
 
     Map* m = buildMap();
@@ -273,7 +273,7 @@ static void demo_deployOnly() {
              << "  |  orders: " << d << " Deploy, " << o << " other\n";
         assert(o == 0); // no non-Deploy orders while pool > 0
     }
-    cout << "    [ASSERT] PASS: 0 non-Deploy orders issued while pool > 0\n";
+    cout << "    PASS: 0 non-Deploy orders issued while pool > 0\n";
 
     assert(alice->getReinforcementPool() == 0);
 
@@ -286,7 +286,7 @@ static void demo_deployOnly() {
     cout << "    Non-Deploy orders before: " << oBefore
          << "  after: " << oAfter << "\n";
     assert(oAfter > oBefore);
-    cout << "    [ASSERT] PASS: non-Deploy order issued once pool is empty\n";
+    cout << "    PASS: non-Deploy order issued once pool is empty\n";
 
     printOrders("Final", alice);
     while (alice->getOrders()->size() > 0) alice->getOrders()->remove(0);
@@ -295,7 +295,7 @@ static void demo_deployOnly() {
 // Condition 3: Advance orders - attack via toAttack(), defend via toDefend()
 static void demo_advance() {
     cout << "\n============================================================\n"
-         << " DEMO 3 [Criterion 3]: Advance to attack and to defend\n"
+         << " DEMO 3 [Condition 3]: Advance to attack and to defend\n"
          << "============================================================\n";
 
     // --- Part A: ATTACK ---
@@ -323,7 +323,7 @@ static void demo_advance() {
         for (Territory* t : *atk) cout << t->getName() << " ";
         cout << "\n";
         assert(!atk->empty());
-        cout << "    [ASSERT] PASS: toAttack() is not empty\n";
+        cout << "    PASS: toAttack() is not empty\n";
         delete atk;
 
         alice->issueOrder(nullptr);
@@ -331,7 +331,7 @@ static void demo_advance() {
         countOrderTypes(alice, d, o);
         printOrders("Attack", alice);
         assert(o >= 1);
-        cout << "    [ASSERT] PASS: Advance (attack) order issued\n";
+        cout << "    PASS: Advance (attack) order issued\n";
         while (alice->getOrders()->size() > 0) alice->getOrders()->remove(0);
     }
 
@@ -374,7 +374,7 @@ static void demo_advance() {
         else for (Territory* t : *atk) cout << t->getName() << " ";
         cout << "\n";
         assert(atk->empty());
-        cout << "    [ASSERT] PASS: toAttack() is empty\n";
+        cout << "    PASS: toAttack() is empty\n";
         delete atk;
 
         alice2->issueOrder(nullptr);
@@ -382,7 +382,7 @@ static void demo_advance() {
         countOrderTypes(alice2, d, o);
         printOrders("Defend", alice2);
         assert(o >= 1);
-        cout << "    [ASSERT] PASS: Defensive Advance order issued via toDefend()\n";
+        cout << "    PASS: Defensive Advance order issued via toDefend()\n";
     }
 }
 
@@ -390,7 +390,7 @@ static void demo_advance() {
 
 static void demo_cardPlaying() {
     cout << "\n============================================================\n"
-         << " DEMO 4 [Criterion 4]: Playing a card issues an order\n"
+         << " DEMO 4 [Condition 4]: Playing a card issues an order\n"
          << "============================================================\n";
 
     Map* m = buildMap();
@@ -436,7 +436,7 @@ static void demo_cardPlaying() {
     assert(handAfter   == handBefore  - 1);
     assert(deckAfter   == deckBefore  + 1);
     assert(ordersAfter >  ordersBefore);
-    cout << "  [ASSERT] PASS: card removed from hand, returned to deck, order added\n";
+    cout << "  PASS: card removed from hand, returned to deck, order added\n";
 
     printOrders("Card-generated", alice);
     delete deck;
@@ -447,7 +447,7 @@ static void demo_cardPlaying() {
 // ===========================================================================
 static void demo_elimination() {
     cout << "\n============================================================\n"
-         << " DEMO 5 [Criterion 5]: Player with 0 territories is eliminated\n"
+         << " DEMO 5 [Condition 5]: Player with 0 territories is eliminated\n"
          << "============================================================\n";
 
     Map* m = buildMap();
@@ -482,15 +482,13 @@ static void demo_elimination() {
     assert(ge.getPlayerCount() == 2);
     for (Player* p : *ge.getPlayers())
         assert(*p->getName() != "Carol");
-    cout << "  [ASSERT] PASS: Carol eliminated, 2 players remain\n";
+    cout << "  PASS: Carol eliminated, 2 players remain\n";
 }
 
-// ===========================================================================
-// CRITERION 6: Game ends when one player controls all territories
-// ===========================================================================
+// Condition 6: Game ends when one player controls all territories
 static void demo_gameEnd() {
     cout << "\n============================================================\n"
-         << " DEMO 6 [Criterion 6]: Game ends when one player owns all territories\n"
+         << " DEMO 6 [Condition 6]: Game ends when one player owns all territories\n"
          << "============================================================\n";
 
     // Bob starts with 0 territories -> immediately eliminated -> Alice wins
@@ -519,12 +517,57 @@ static void demo_gameEnd() {
     assert(ge.getCurrentState() == "Win");
     assert(ge.getPlayerCount() == 1);
     assert(*ge.getPlayers()->at(0)->getName() == "Alice");
-    cout << "  [ASSERT] PASS: state == Win, Alice is the sole remaining player\n";
+    cout << "  PASS: state == Win, Alice is the sole remaining player\n";
+}
+//Demo 7: Main Game loop
+static void demo_main_game(){
+    cout << "\n============================================================\n"
+         << " DEMO 7: Main Game loop\n"
+         << "============================================================\n";
+
+    // Build the map programmatically so the demo is self-contained
+        Map* m = new Map();
+        Continent* na   = new Continent("NorthAmerica", 5);
+        Continent* asia = new Continent("Asia", 7);
+        m->continents->push_back(na);
+        m->continents->push_back(asia);
+
+        Territory* canada = new Territory("Canada");
+        Territory* usa    = new Territory("USA");
+        Territory* china  = new Territory("China");
+        Territory* russia = new Territory("Russia");
+        Territory* japan  = new Territory("Japan");
+
+        canada->setContinent(na);
+        usa->setContinent(na);
+        china->setContinent(asia);
+        russia->setContinent(asia);
+        japan->setContinent(asia);
+
+        m->territories->push_back(canada);
+        m->territories->push_back(usa);
+        m->territories->push_back(china);
+        m->territories->push_back(russia);
+        m->territories->push_back(japan);
+
+        canada->addNeighbour(usa);    usa->addNeighbour(canada);
+        china->addNeighbour(russia);  russia->addNeighbour(china);
+        russia->addNeighbour(japan);  japan->addNeighbour(russia);
+        usa->addNeighbour(china);     china->addNeighbour(usa);
+
+        GameEngine ge;
+        ge.loadMap(m);
+        ge.addPlayer("Alice");
+        ge.addPlayer("Bob");
+        ge.assignCountries();
+
+        ge.mainGameLoop();
+
+ 
 }
 
-// ===========================================================================
 // main
-// ===========================================================================
+
 int main() {
     srand(42);
 
@@ -538,9 +581,11 @@ int main() {
     demo_cardPlaying();   // (4) card playing issues orders
     demo_elimination();   // (5) player with 0 territories eliminated
     demo_gameEnd();       // (6) game ends when one player owns everything
-
+    
     cout << "\n============================================================\n"
          << "  All 6 criteria demonstrated and asserted successfully.\n"
          << "============================================================\n";
+
+    demo_main_game();   //(7) Main game demo demonstrating main game loop works
     return 0;
 }

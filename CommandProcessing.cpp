@@ -5,6 +5,7 @@
 
 // Default command constructor
 Command::Command() {}
+Command::~Command(){}
 
 // Command constructor with a valid command
 Command::Command(string command) {
@@ -26,7 +27,12 @@ string Command::stringToLog() const {
 // ----------------------COMMAND PROCESSOR CLASS IMPLEMENTATION------------------------
 
 CommandProcessor::CommandProcessor() {}
-
+CommandProcessor::~CommandProcessor(){
+	for(Command* c: command_list){
+		delete c;
+	}
+	command_list.clear();
+}
 // Reads command, validates it, then creates a command object and saves it in the command list
 std::string CommandProcessor::readCommand(GameEngine* ge) {
 	std::string line, cmd;

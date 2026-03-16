@@ -9,7 +9,7 @@
  *   1. Validation - valid commands accepted, invalid ones rejected per state
  *   2. The chosen input mode - console or file
  *
- * Compile alongside: CommandProcessing.cpp, GameEngine.cpp, Map.cpp,
+ * Compile with: CommandProcessing.cpp, GameEngine.cpp, Map.cpp,
  *                    Player.cpp, Orders.cpp, Cards.cpp, LoggingObserver.cpp
  */
 
@@ -24,9 +24,7 @@
 using std::cout;
 using std::string;
 
-// -----------------------------------------------------------------------------
 // Test 1 - validate(): spot-check valid and invalid commands across key states
-// -----------------------------------------------------------------------------
 static void testValidation() {
     cout << "\n=== TEST 1: validate() - valid & invalid commands per state ===\n";
 
@@ -64,9 +62,8 @@ static void testValidation() {
     cout << "All validation assertions passed.\n";
 }
 
-// -----------------------------------------------------------------------------
+
 // Helper: advance engine state based on an accepted command
-// -----------------------------------------------------------------------------
 static void advanceState(GameEngine& ge, const string& cmd) {
     if      (cmd == "loadmap"     && ge.getCurrentState() == "Start")        ge.setState(MapLoaded);
     else if (cmd == "validatemap" && ge.getCurrentState() == "MapLoaded")    ge.setState(MapValidated);
@@ -74,9 +71,8 @@ static void advanceState(GameEngine& ge, const string& cmd) {
     else if (cmd == "gamestart"   && ge.getCurrentState() == "PlayersAdded") ge.setState(Win);
 }
 
-// -----------------------------------------------------------------------------
-// Test 2a - Console: read commands from stdin, validate, change state
-// -----------------------------------------------------------------------------
+
+// Test 2 - Console: read commands from stdin, validate, change state
 static void testConsoleInput() {
     cout << "\n=== TEST 2: Console CommandProcessor ===\n";
     cout << "Valid commands per state:\n";
@@ -118,9 +114,8 @@ static void testConsoleInput() {
     cout << "Commands accepted this session:\n" << cp;
 }
 
-// -----------------------------------------------------------------------------
-// Test 2b - File: read commands from file, invalid ones skipped, state changes
-// -----------------------------------------------------------------------------
+
+// Test 2 - File: read commands from file, invalid ones skipped, state changes
 static void testFileInput(const string& filename) {
     cout << "\n=== TEST 2: FileCommandProcessorAdapter - reading from '" << filename << "' ===\n";
 
@@ -143,7 +138,7 @@ static void testFileInput(const string& filename) {
     cout << "\nFinal state: [" << ge.getCurrentState() << "]\n";
 }
 
-// -----------------------------------------------------------------------------
+// Main driver
 int main(int argc, char* argv[]) {
     cout << "===== CommandProcessing Driver =====\n";
 

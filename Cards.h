@@ -88,6 +88,7 @@ public:
     void addCard(Cards* card);
     void removeCard(Cards* card);
     int getNumCards() const;
+    Cards* getCard(int index) const;
     std::vector<Cards*>* getCards() { return &_cardsInHand; }
 };
 

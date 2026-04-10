@@ -13,6 +13,7 @@ class Deck;
 class OrdersList;
 class Order;
 class Territory;
+class PlayerStrategy;
 
 
 
@@ -26,9 +27,14 @@ public:
     ~Player();
 
     // Defend/Attack and issue order methods
+    //delegate to the PlayerStrategy
     std::vector<Territory*>* toDefend();
     std::vector<Territory*>* toAttack();
     void issueOrder(Deck* deck);
+    
+    // Strategy getter/setter
+    void setStrategy(PlayerStrategy* newStrategy);
+    PlayerStrategy* getStrategy() const;
     //setters and getters
     std::string* getName() const;
     std::vector<Territory*>* getTerritories() const;
@@ -58,6 +64,7 @@ private:
     std::vector<Player*>* negotiatedPlayers;
     bool* conqueredTerritoryThisTurn;
     bool* receivedCardThisTurn;
+    PlayerStrategy* strategy;  // Strategy for issuing orders and making decisions
 };
 
 #endif

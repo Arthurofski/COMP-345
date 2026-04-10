@@ -266,3 +266,10 @@ void Hand::removeCard(Cards* card) {
 int Hand::getNumCards() const {
     return static_cast<int>(_cardsInHand.size());
 }
+
+Cards* Hand::getCard(int index) const {
+    if (index < 0 || index >= static_cast<int>(_cardsInHand.size()))
+        return nullptr;
+    return _cardsInHand[index];
+}
+ 

@@ -21,7 +21,7 @@ static int readInt(const string& prompt, int lo, int hi) {
     while (true) {
         cout << prompt;
         if (cin >> v && v >= lo && v <= hi) { flushCin(); return v; }
-        cout << "Invalid - enter a number between" << lo << " and " << hi << ".\n";
+        cout << "  Invalid – enter a number between " << lo << " and " << hi << ".\n";
         flushCin();
     }
 }
@@ -43,29 +43,30 @@ void HumanPlayerStrategy::issueOrder(Player* player, Deck* deck) {
     if (player->getReinforcementPool() > 0) {
         vector<Territory*>* defend = toDefend(player);
 
-        cout << "\nDEPLOY (" << *player->getName() << ")\n";
-        cout << "Reinforcement pool: " << player->getReinforcementPool() << " armies\n";
-        cout << "Your territories:\n";
+        cout << "\n╔══ DEPLOY (" << *player->getName() << ") ══\n";
+        cout << "║  Reinforcement pool: " << player->getReinforcementPool() << " armies\n";
+        cout << "║  Your territories:\n";
         for (int i = 0; i < (int)defend->size(); ++i)
-            cout << "[" << i << "] " << defend->at(i)->getName()
+            cout << "║    [" << i << "] " << defend->at(i)->getName()
                  << "  (" << *defend->at(i)->armies << " armies)\n";
 
-        int choice = readInt("Deploy all armies to territory: ",
+        int choice = readInt("╚► Deploy all armies to territory: ",
                              0, (int)defend->size() - 1);
 
         Territory* target = defend->at(choice);
         int pool = player->getReinforcementPool();
         player->getOrders()->add(new Deploy(pool, player, target));
         player->setReinforcementPool(0);
-        cout << "Deploy queued: " << pool << " → " << target->getName() << "\n";
+        cout << "  ✓ Deploy queued: " << pool << " → " << target->getName() << "\n";
         delete defend;
     }
 
     // ── Step 2: Advance orders (loop until 'd') ───────────────────────────────
     while (true) {
-        cout << "\nADVANCE (" << *player->getName() << ")\n";
-        cout << "[y] issue Advance   [d] done\n";
+        cout << "\n╔══ ADVANCE (" << *player->getName() << ") ══\n";
+        cout << "║  [y] issue Advance   [d] done\n";
         char ans;
+        cout << "╚► ";
         cin >> ans; flushCin();
 
         if (ans == 'd' || ans == 'D') break;
@@ -75,7 +76,7 @@ void HumanPlayerStrategy::issueOrder(Player* player, Deck* deck) {
         vector<Territory*>* myTerrs = toDefend(player);
         if (myTerrs->empty()) { delete myTerrs; break; }
 
-        cout << "\nYour territories (source):\n";
+        cout << "\n  Your territories (source):\n";
         for (int i = 0; i < (int)myTerrs->size(); ++i)
             cout << "    [" << i << "] " << myTerrs->at(i)->getName()
                  << "  (" << *myTerrs->at(i)->armies << " armies)\n";
@@ -91,37 +92,37 @@ void HumanPlayerStrategy::issueOrder(Player* player, Deck* deck) {
             cout << "  " << source->getName() << " has no neighbours.\n";
             continue;
         }
-        cout << "\nNeighbours of " << source->getName() << ":\n";
+        cout << "\n  Neighbours of " << source->getName() << ":\n";
         for (int i = 0; i < (int)nbrs.size(); ++i) {
             string owner = nbrs[i]->owner ? *nbrs[i]->owner->getName() : "Nobody";
             cout << "    [" << i << "] " << nbrs[i]->getName()
                  << "  owner: " << owner
                  << "  armies: " << *nbrs[i]->armies << "\n";
         }
-        int dstIdx = readInt("Destination [0-" + to_string((int)nbrs.size()-1) + "]: ",
+        int dstIdx = readInt("  Destination [0-" + to_string((int)nbrs.size()-1) + "]: ",
                              0, (int)nbrs.size()-1);
         Territory* dest = nbrs[dstIdx];
 
         int maxA = *source->armies - 1;
-        if (maxA <= 0) { cout << "Not enough armies to advance.\n"; continue; }
+        if (maxA <= 0) { cout << "  Not enough armies to advance.\n"; continue; }
 
-        int num = readInt("Armies to advance [1-" + to_string(maxA) + "]: ", 1, maxA);
+        int num = readInt("  Armies to advance [1-" + to_string(maxA) + "]: ", 1, maxA);
         player->getOrders()->add(new Advance(num, player, source, dest));
-        cout << "Advance queued: " << num << "  "
-             << source->getName() << " ==> " << dest->getName() << "\n";
+        cout << "  ✓ Advance queued: " << num << "  "
+             << source->getName() << " → " << dest->getName() << "\n";
     }
 
     // ── Step 3: Optionally play a card ────────────────────────────────────────
     if (player->getHand()->getNumCards() > 0) {
-        cout << "\nCARD (" << *player->getName() << ")\n";
-        cout << "Hand: " << *player->getHand() << "\n";
-        cout << "Play a card? [y/n]\n";
+        cout << "\n╔══ CARD (" << *player->getName() << ") ══\n";
+        cout << "║  Hand: " << *player->getHand() << "\n";
+        cout << "║  Play a card? [y/n]\n╚► ";
         char ans; cin >> ans; flushCin();
         if (ans == 'y' || ans == 'Y') {
             Cards* card = player->getHand()->getCard(0);
             if (card) {
                 card->play(player->getHand(), deck, player);
-                cout << "Card played.\n";
+                cout << "  ✓ Card played.\n";
             }
         }
     }
@@ -154,12 +155,36 @@ vector<Territory*>* HumanPlayerStrategy::toDefend(Player* player) {
 // AggressivePlayerStrategy
 // =============================================================================
 
-/** Returns the owned territory with the most armies. */
+/**
+ * Returns the owned territory with the most armies that also has at least
+ * one adjacent enemy neighbour to attack.  If no such territory exists
+ * (e.g. the player is completely surrounded by their own territories),
+ * falls back to simply the strongest territory overall.
+ */
 Territory* AggressivePlayerStrategy::findStrongestTerritory(Player* player) {
     if (!player || player->getTerritories()->empty()) return nullptr;
-    Territory* best = player->getTerritories()->front();
-    for (Territory* t : *player->getTerritories())
-        if (*t->armies > *best->armies) best = t;
+
+    // Helper: does this territory have at least one enemy neighbour?
+    auto hasEnemyNeighbour = [&](Territory* t) {
+        for (Territory* nb : *t->neighbours)
+            if (nb->owner != player) return true;
+        return false;
+    };
+
+    // First pass: strongest territory that can actually attack someone
+    Territory* best = nullptr;
+    for (Territory* t : *player->getTerritories()) {
+        if (!hasEnemyNeighbour(t)) continue;
+        if (!best || *t->armies > *best->armies) best = t;
+    }
+
+    // Fallback: no territory borders an enemy — just return the strongest overall
+    if (!best) {
+        best = player->getTerritories()->front();
+        for (Territory* t : *player->getTerritories())
+            if (*t->armies > *best->armies) best = t;
+    }
+
     return best;
 }
 
@@ -178,24 +203,27 @@ void AggressivePlayerStrategy::issueOrder(Player* player, Deck* deck) {
         player->getOrders()->add(new Deploy(amount, player, strongest));
         player->setReinforcementPool(0);
         cout << "[" << *player->getName() << " (Aggressive)] Deploy "
-             << amount << " ==> " << strongest->getName() << "\n";
+             << amount << " → " << strongest->getName() << "\n";
     }
-    
 
-    // Advance from strongest to every adjacent enemy
-    for(Territory* source : *player->getTerritories()){
+    // Advance from EVERY owned territory to all its adjacent enemies.
+    // If the target territory belongs to a Neutral player, switch them to
+    // Aggressive immediately — they are being attacked.
+    for (Territory* source : *player->getTerritories()) {
         if (*source->armies <= 1) continue;  // keep at least 1 army behind
         for (Territory* nb : *source->neighbours) {
             if (nb->owner != player) {
+                // Neutral player becomes Aggressive when targeted
+                if (nb->owner && nb->owner->getStrategy()->strategyName() == "Neutral") {
+                    cout << "[Game] " << *nb->owner->getName()
+                         << " is being attacked — switching Neutral → Aggressive!\n";
+                    nb->owner->setStrategy(new AggressivePlayerStrategy());
+                }
                 int armies = *source->armies - 1;
                 player->getOrders()->add(new Advance(armies, player, source, nb));
-                if(nb->getOwner()->getStrategy()->strategyName() == "Neutral"){
-                    cout << *nb->getOwner()->getName() << " was attacked - switching Neutral ==> Aggressive\n";
-                    nb->getOwner()->setStrategy(new AggressivePlayerStrategy());
-                }
                 cout << "[" << *player->getName() << " (Aggressive)] Advance "
                      << armies << "  " << source->getName()
-                     << " ==> " << nb->getName() << "\n";
+                     << " → " << nb->getName() << "\n";
             }
         }
     }
@@ -249,7 +277,7 @@ void BenevolentPlayerStrategy::issueOrder(Player* player, Deck* deck) {
         player->getOrders()->add(new Deploy(amount, player, weakest));
         player->setReinforcementPool(0);
         cout << "[" << *player->getName() << " (Benevolent)] Deploy "
-             << amount << " ==>" << weakest->getName() << "\n";
+             << amount << " → " << weakest->getName() << "\n";
     }
 
     // Reinforce weakest from friendly neighbours
@@ -263,7 +291,7 @@ void BenevolentPlayerStrategy::issueOrder(Player* player, Deck* deck) {
                         player->getOrders()->add(new Advance(armies, player, nb, weakest));
                         cout << "[" << *player->getName() << " (Benevolent)] Reinforce "
                              << armies << "  " << nb->getName()
-                             << " ==> " << weakest->getName() << "\n";
+                             << " → " << weakest->getName() << "\n";
                     }
                 }
             }
@@ -346,7 +374,7 @@ void CheaterPlayerStrategy::issueOrder(Player* player, Deck* deck) {
     }
 }
 
-/** Returns all adjacent enemy territories */
+/** Returns all adjacent enemy territories (informational). */
 vector<Territory*>* CheaterPlayerStrategy::toAttack(Player* player) {
     auto* r = new vector<Territory*>();
     if (!player) return r;
@@ -363,4 +391,91 @@ vector<Territory*>* CheaterPlayerStrategy::toDefend(Player* player) {
     auto* r = new vector<Territory*>();
     if (player) for (Territory* t : *player->getTerritories()) r->push_back(t);
     return r;
+}
+
+// =============================================================================
+// Copy constructors, assignment operators, stream insertion operators
+//
+// These strategy classes hold NO data members — all behaviour is stateless
+// and driven entirely by the Player* passed into each method.  The copy
+// constructor and assignment operator therefore have nothing to copy; they
+// exist only to satisfy the assignment's design requirements.
+// The stream insertion operator prints the strategy name.
+// =============================================================================
+
+// ── Base class stream insertion ───────────────────────────────────────────────
+ostream& operator<<(ostream& os, const PlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
+}
+
+// ── HumanPlayerStrategy ───────────────────────────────────────────────────────
+HumanPlayerStrategy::HumanPlayerStrategy(const HumanPlayerStrategy& other) {
+    // No data members to copy
+}
+
+HumanPlayerStrategy& HumanPlayerStrategy::operator=(const HumanPlayerStrategy& other) {
+    // No data members to copy; self-assignment safe by default
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const HumanPlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
+}
+
+// ── AggressivePlayerStrategy ──────────────────────────────────────────────────
+AggressivePlayerStrategy::AggressivePlayerStrategy(const AggressivePlayerStrategy& other) {
+    // No data members to copy
+}
+
+AggressivePlayerStrategy& AggressivePlayerStrategy::operator=(const AggressivePlayerStrategy& other) {
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const AggressivePlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
+}
+
+// ── BenevolentPlayerStrategy ──────────────────────────────────────────────────
+BenevolentPlayerStrategy::BenevolentPlayerStrategy(const BenevolentPlayerStrategy& other) {
+    // No data members to copy
+}
+
+BenevolentPlayerStrategy& BenevolentPlayerStrategy::operator=(const BenevolentPlayerStrategy& other) {
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const BenevolentPlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
+}
+
+// ── NeutralPlayerStrategy ─────────────────────────────────────────────────────
+NeutralPlayerStrategy::NeutralPlayerStrategy(const NeutralPlayerStrategy& other) {
+    // No data members to copy
+}
+
+NeutralPlayerStrategy& NeutralPlayerStrategy::operator=(const NeutralPlayerStrategy& other) {
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const NeutralPlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
+}
+
+// ── CheaterPlayerStrategy ─────────────────────────────────────────────────────
+CheaterPlayerStrategy::CheaterPlayerStrategy(const CheaterPlayerStrategy& other) {
+    // No data members to copy
+}
+
+CheaterPlayerStrategy& CheaterPlayerStrategy::operator=(const CheaterPlayerStrategy& other) {
+    return *this;
+}
+
+ostream& operator<<(ostream& os, const CheaterPlayerStrategy& ps) {
+    os << "PlayerStrategy: " << ps.strategyName();
+    return os;
 }

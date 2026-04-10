@@ -3,9 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <iostream>
 #include "Map.h"
 
-// Forward declarations
 class Player;
 class Deck;
 
@@ -19,36 +19,46 @@ class PlayerStrategy {
 public:
     virtual ~PlayerStrategy() = default;
 
-    // Issues one or more orders for this turn
     virtual void issueOrder(Player* player, Deck* deck) = 0;
-
-    // Returns the list of territories this strategy prioritizes attacking
     virtual std::vector<Territory*>* toAttack(Player* player) = 0;
-
-    // Returns the list of territories this strategy prioritizes defending
     virtual std::vector<Territory*>* toDefend(Player* player) = 0;
-
-    // Returns the name of the strategy for display
     virtual std::string strategyName() const = 0;
+
+    friend std::ostream& operator<<(std::ostream& os, const PlayerStrategy& ps);
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * HumanPlayerStrategy: Requires user interaction via cin to make decisions.
  */
 class HumanPlayerStrategy : public PlayerStrategy {
 public:
+    HumanPlayerStrategy() = default;
+    HumanPlayerStrategy(const HumanPlayerStrategy& other);
+    HumanPlayerStrategy& operator=(const HumanPlayerStrategy& other);
+    friend std::ostream& operator<<(std::ostream& os, const HumanPlayerStrategy& ps);
+
     void issueOrder(Player* player, Deck* deck) override;
     std::vector<Territory*>* toAttack(Player* player) override;
     std::vector<Territory*>* toDefend(Player* player) override;
     std::string strategyName() const override { return "Human"; }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
- * AggressivePlayerStrategy: Deploys all armies on its strongest territory,
- * then advances to attack every adjacent enemy until it cannot do so anymore.
+ * AggressivePlayerStrategy: Deploys all armies on its strongest territory
+ * (that has an adjacent enemy), then advances from every owned territory
+ * to attack all adjacent enemies.
  */
 class AggressivePlayerStrategy : public PlayerStrategy {
 public:
+    AggressivePlayerStrategy() = default;
+    AggressivePlayerStrategy(const AggressivePlayerStrategy& other);
+    AggressivePlayerStrategy& operator=(const AggressivePlayerStrategy& other);
+    friend std::ostream& operator<<(std::ostream& os, const AggressivePlayerStrategy& ps);
+
     void issueOrder(Player* player, Deck* deck) override;
     std::vector<Territory*>* toAttack(Player* player) override;
     std::vector<Territory*>* toDefend(Player* player) override;
@@ -58,14 +68,21 @@ private:
     Territory* findStrongestTerritory(Player* player);
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * BenevolentPlayerStrategy: Deploys all armies on its weakest territory,
  * advances armies to reinforce weak territories. Never attacks enemies.
  */
 class BenevolentPlayerStrategy : public PlayerStrategy {
 public:
+    BenevolentPlayerStrategy() = default;
+    BenevolentPlayerStrategy(const BenevolentPlayerStrategy& other);
+    BenevolentPlayerStrategy& operator=(const BenevolentPlayerStrategy& other);
+    friend std::ostream& operator<<(std::ostream& os, const BenevolentPlayerStrategy& ps);
+
     void issueOrder(Player* player, Deck* deck) override;
-    std::vector<Territory*>* toAttack(Player* player) override;  // always empty
+    std::vector<Territory*>* toAttack(Player* player) override;
     std::vector<Territory*>* toDefend(Player* player) override;
     std::string strategyName() const override { return "Benevolent"; }
 
@@ -73,17 +90,27 @@ private:
     Territory* findWeakestTerritory(Player* player);
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 /**
  * NeutralPlayerStrategy: Never issues any orders.
- * If attacked, the game engine switches this player to AggressivePlayerStrategy.
+ * Switched to AggressivePlayerStrategy by the attacker's issueOrder()
+ * when an Advance order is queued against one of its territories.
  */
 class NeutralPlayerStrategy : public PlayerStrategy {
 public:
+    NeutralPlayerStrategy() = default;
+    NeutralPlayerStrategy(const NeutralPlayerStrategy& other);
+    NeutralPlayerStrategy& operator=(const NeutralPlayerStrategy& other);
+    friend std::ostream& operator<<(std::ostream& os, const NeutralPlayerStrategy& ps);
+
     void issueOrder(Player* player, Deck* deck) override;
-    std::vector<Territory*>* toAttack(Player* player) override;  // always empty
+    std::vector<Territory*>* toAttack(Player* player) override;
     std::vector<Territory*>* toDefend(Player* player) override;
     std::string strategyName() const override { return "Neutral"; }
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 /**
  * CheaterPlayerStrategy: Automatically conquers all territories adjacent
@@ -91,6 +118,11 @@ public:
  */
 class CheaterPlayerStrategy : public PlayerStrategy {
 public:
+    CheaterPlayerStrategy() = default;
+    CheaterPlayerStrategy(const CheaterPlayerStrategy& other);
+    CheaterPlayerStrategy& operator=(const CheaterPlayerStrategy& other);
+    friend std::ostream& operator<<(std::ostream& os, const CheaterPlayerStrategy& ps);
+
     void issueOrder(Player* player, Deck* deck) override;
     std::vector<Territory*>* toAttack(Player* player) override;
     std::vector<Territory*>* toDefend(Player* player) override;

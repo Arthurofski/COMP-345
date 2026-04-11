@@ -98,14 +98,15 @@ string CommandProcessor::readCommand(GameEngine* ge) {
         std::istringstream iss(line);
         iss >> cmd;
 
-		if (validate(cmd, ge)) {
-			Command* new_cmd = new Command(cmd);
+		new_cmd = new Command(line);
+		if (validate(line, ge)) {
 			saveCommand(new_cmd);
 			break;
 		}
 		else {
 			cout << "\nInvalid command!\n";
 			new_cmd->saveEffect("Invalid command");
+			saveCommand(new_cmd);
 		}
 	}
 	if (!line.empty())
@@ -141,18 +142,57 @@ string CommandProcessor::getCommand(GameEngine* ge) {
 bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 	string state = ge->getCurrentState();
 
-	if (cmd_input == "loadmap" && (state == "Start" || state == "MapLoaded"))
+	std::istringstream iss(cmd_input);
+	string cmd;
+	iss >> cmd;
+
+	if (cmd == "loadmap" && (state == "Start" || state == "MapLoaded"))
 		return true;
-	if (cmd_input == "validatemap" && state == "MapLoaded")
+	if (cmd == "validatemap" && state == "MapLoaded")
 		return true;
-	if (cmd_input == "addplayer" && (state == "MapValidated" || state == "PlayersAdded"))
+	if (cmd == "addplayer" && (state == "MapValidated" || state == "PlayersAdded"))
 		return true;
-	if (cmd_input == "gamestart" && state == "PlayersAdded")
+	if (cmd == "gamestart" && state == "PlayersAdded")
 		return true;
-	if (cmd_input == "replay" && state == "Win")
+	if (cmd == "replay" && state == "Win")
 		return true;
-	if (cmd_input == "quit" && state == "Win")
+	if (cmd == "quit" && state == "Win")
 		return true;
+	if (cmd == "tournament" && state == "Start") {
+		
+		// tournament -M <listofmapfiles> -P <listofplayerstrategies> -G <numberofgames> -D <maxnumberofturns>
+		string token;
+		vector<string> maps;
+		vector<string> strategies;
+		int num_games = 0;
+		int max_turns = 0;
+
+		string current_flag = "";
+		while (iss >> token) {
+			if (token == "-M" || token == "-P" || token == "-G" || token == "-D") {
+				current_flag = token;
+			} else {
+				if (current_flag == "-M") {
+					maps.push_back(token);
+				} else if (current_flag == "-P") {
+					strategies.push_back(token);
+				} else if (current_flag == "-G") {
+					try { num_games = stoi(token); } catch (...) { return false; }
+				} else if (current_flag == "-D") {
+					try { max_turns = stoi(token); } catch (...) { return false; }
+				} else {
+					return false; 
+				}
+			}
+		}
+
+		if (maps.size() < 1 || maps.size() > 5) return false;
+		if (strategies.size() < 2 || strategies.size() > 4) return false;
+		if (num_games < 1 || num_games > 5) return false;
+		if (max_turns < 10 || max_turns > 50) return false;
+
+		return true;
+	}
 		
 	return false;
 }
@@ -254,16 +294,16 @@ string FileCommandProcessorAdapter::readCommand(GameEngine* ge) {
         std::string cmd;
         iss >> cmd;
 
-        if (validate(cmd, ge)) {
-            Command* new_cmd = new Command(cmd);
+        if (validate(line, ge)) {
+            Command* new_cmd = new Command(line);
             saveCommand(new_cmd); 
             return line;
         } 
 		else {
-            Command* new_cmd = new Command(cmd);
-            new_cmd->saveEffect("Invalid command '" + cmd + "' in state " + ge->getCurrentState());
+            Command* new_cmd = new Command(line);
+            new_cmd->saveEffect("Invalid command '" + line + "' in state " + ge->getCurrentState());
             saveCommand(new_cmd);
-            std::cout << "Invalid command in file: " << cmd << "\n";
+            std::cout << "Invalid command in file: " << line << "\n";
         }
     }
     std::cout << "End of command file reached.\n";

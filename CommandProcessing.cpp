@@ -309,3 +309,7 @@ string FileCommandProcessorAdapter::readCommand(GameEngine* ge) {
     std::cout << "End of command file reached.\n";
     return "";
 }
+
+string FileCommandProcessorAdapter::getCommand(GameEngine* ge) {
+    return FileCommandProcessorAdapter::readCommand(ge);
+}

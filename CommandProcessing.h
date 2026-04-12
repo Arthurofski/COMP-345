@@ -74,6 +74,7 @@ public:
 	FileCommandProcessorAdapter(const FileCommandProcessorAdapter& other); 
     FileCommandProcessorAdapter& operator=(const FileCommandProcessorAdapter& other);
     friend ostream& operator<<(ostream& os, const FileCommandProcessorAdapter& fcpa); 
+    string getCommand(GameEngine* ge);
 };
 
 #endif //COMMANDPROCESSING_H

@@ -454,6 +454,55 @@ void GameEngine::mainGameLoop(){
     }
 }
 
+void GameEngine::mainGameLoop(int maxRounds){
+    if (!map || players->empty()) {
+        std::cout << "Cannot start game: map not loaded or no players.\n";
+        return;
+    }
+ 
+    std::cout << "\n========== MAIN GAME LOOP ==========\n";
+    setState(AssignReinforcement);
+
+    removeEliminatedPlayers();
+    if (checkWinCondition()) {
+        setState(Win);
+        std::cout << "\n*** " << *(*players)[0]->getName()
+                  << " wins the game! (opponent had no territories) ***\n";
+        return;
+    }
+ 
+    int round = 0;
+ 
+    while (!checkWinCondition() && round < maxRounds) {
+        round++;
+        std::cout << "\n====== Round " << round << " ======"
+             << "  Players remaining: " << players->size() << "\n";
+ 
+        reinforcementPhase();
+ 
+        setState(IssueOrders);
+        issueOrdersPhase();
+ 
+        setState(ExecuteOrders);
+        executeOrdersPhase();
+ 
+        if (checkWinCondition()) break;
+ 
+        setState(AssignReinforcement);
+    }
+ 
+    if (players->size() == 1) {
+        setState(Win);
+        std::cout << "\n*** " << *(*players)[0]->getName()
+             << " wins the game! ***\n";
+    } else if (round >= maxRounds) {
+        std::cout << "\n[Reached maximum of " << maxRounds << " rounds. Declaring draw.]\n";
+        std::cout << "Remaining players: ";
+        for (Player* p : *players) std::cout << *p->getName() << " ";
+        std::cout << "\n";
+    }
+}
+
 bool GameEngine::runTournament(const std::vector<std::string>& mapFiles,
     const std::vector<std::string>& strategyNames,
     int numGames,

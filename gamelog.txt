@@ -2,3 +2,9 @@ Effect: Map loaded successfully
 GameEngine transitioned to State: MapLoaded
 Order Issued and added to list
 Order executed: Deploy
+Tournament mode:
+M: map1.map, map2.map
+P: Aggressive, Defensive, Benevolent
+G: 2
+D: 20
+Results:

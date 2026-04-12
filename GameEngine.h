@@ -67,6 +67,11 @@ public:
     void executeOrdersPhase();
     //main game loop method containing the 3 phases
     void mainGameLoop();
+    void mainGameLoop(int maxRounds);
+    bool runTournament(const std::vector<std::string>& mapFiles,
+        const std::vector<std::string>& strategyNames,
+        int numGames,
+        int maxTurns);
 
     // Getter for the current state
     std::string getCurrentState() const;

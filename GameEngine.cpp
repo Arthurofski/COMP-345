@@ -1,8 +1,18 @@
 #include "GameEngine.h"
 #include "CommandProcessing.h"
+#include "PlayerStrategies.h"
+#include <fstream>
 #include <sstream>
 #include <random>
 #include <algorithm>
+
+static PlayerStrategy* createStrategyByName(const std::string& strategyName) {
+    if (strategyName == "Aggressive") return new AggressivePlayerStrategy();
+    if (strategyName == "Benevolent") return new BenevolentPlayerStrategy();
+    if (strategyName == "Neutral") return new NeutralPlayerStrategy();
+    if (strategyName == "Cheater") return new CheaterPlayerStrategy();
+    return nullptr;
+}
 
 // Function to convert state enum to string for display purposes
 std::string stateToString( state s ) {
@@ -437,11 +447,97 @@ void GameEngine::mainGameLoop(){
         std::cout << "\n*** " << *(*players)[0]->getName()
              << " wins the game! ***\n";
     } else if (round >= MAX_ROUNDS) {
-        std::cout << "\n[Demo cap reached after " << MAX_ROUNDS << " rounds.]\n";
+        std::cout << "\n[Reached maximum of " << MAX_ROUNDS << " rounds. Declaring draw.]\n";
         std::cout << "Remaining players: ";
         for (Player* p : *players) std::cout << *p->getName() << " ";
         std::cout << "\n";
     }
+}
+
+bool GameEngine::runTournament(const std::vector<std::string>& mapFiles,
+    const std::vector<std::string>& strategyNames,
+    int numGames,
+    int maxTurns) {
+
+    std::ofstream log("gamelog.txt", std::ios::app);
+    if (!log) {
+        std::cout << "Failed to open log file for tournament output.\n";
+    }
+
+    auto join = [](const std::vector<std::string>& items) {
+        std::string out;
+        for (size_t i = 0; i < items.size(); ++i) {
+            out += items[i];
+            if (i + 1 < items.size()) out += ", ";
+        }
+        return out;
+    };
+
+    std::cout << "\nTournament mode:\n";
+    log << "Tournament mode:" << std::endl;
+    std::cout << "M: " << join(mapFiles) << "\n";
+    std::cout << "P: " << join(strategyNames) << "\n";
+    std::cout << "G: " << numGames << "\n";
+    std::cout << "D: " << maxTurns << "\n";
+    log << "M: " << join(mapFiles) << std::endl;
+    log << "P: " << join(strategyNames) << std::endl;
+    log << "G: " << numGames << std::endl;
+    log << "D: " << maxTurns << std::endl;
+    log << "Results:" << std::endl;
+
+    for (size_t mapIndex = 0; mapIndex < mapFiles.size(); ++mapIndex) {
+        const std::string& mapFile = mapFiles[mapIndex];
+        Map* loadedMap = MapLoader::load(mapFile);
+        if (!loadedMap) {
+            std::cout << "Failed to load map: " << mapFile << "\n";
+            return false;
+        }
+        if (!loadedMap->validate()) {
+            std::cout << "Invalid map in tournament: " << mapFile << "\n";
+            delete loadedMap;
+            return false;
+        }
+
+        std::cout << "Map " << (mapIndex + 1) << ": " << mapFile << "\n";
+        log << "Map " << (mapIndex + 1) << ": " << mapFile << std::endl;
+
+        for (int gameIndex = 0; gameIndex < numGames; ++gameIndex) {
+            GameEngine tournamentGame;
+            tournamentGame.loadMap(new Map(*loadedMap));
+
+            for (size_t playerIndex = 0; playerIndex < strategyNames.size(); ++playerIndex) {
+                const std::string& strategyName = strategyNames[playerIndex];
+                std::string playerName = strategyName + std::to_string(playerIndex + 1);
+                tournamentGame.addPlayer(playerName);
+                Player* p = (*tournamentGame.getPlayers())[playerIndex];
+                PlayerStrategy* strat = createStrategyByName(strategyName);
+                if (!strat) {
+                    std::cout << "Unknown strategy: " << strategyName << "\n";
+                    delete loadedMap;
+                    return false;
+                }
+                p->setStrategy(strat);
+            }
+
+            tournamentGame.assignCountries();
+            tournamentGame.mainGameLoop(maxTurns);
+
+            std::string gameResult;
+            if (tournamentGame.getPlayers()->size() == 1) {
+                gameResult = *(*tournamentGame.getPlayers())[0]->getName();
+            } else {
+                gameResult = "Draw";
+            }
+
+            std::cout << "Game " << (gameIndex + 1) << ": " << gameResult << "\n";
+            log << "Game " << (gameIndex + 1) << ": " << gameResult << std::endl;
+        }
+
+        delete loadedMap;
+    }
+
+    log << std::endl;
+    return true;
 }
 
 std::string GameEngine::stringToLog() const {
@@ -451,7 +547,7 @@ std::string GameEngine::stringToLog() const {
 
 void GameEngine::startupPhase() {
     std::cout << "\n----- Warzone - Startup Phase: -----\n"
-              << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart\n";
+              << "Commands: loadmap <file>  validatemap  addplayer <name>  gamestart  tournament\n";
 
     CommandProcessor* cmdproc = new CommandProcessor();
     std::string line;
@@ -529,6 +625,28 @@ void GameEngine::startupPhase() {
             if (*currentState == MapValidated)
                 setState(PlayersAdded);
 
+        // ---- tournament -------------------------------------------------
+        } else if (cmd == "tournament") {
+            if (*currentState != Start) {
+                std::cout << "Cannot use 'tournament' in state: " << getCurrentState() << "\n";
+                continue;
+            }
+
+            std::vector<std::string> maps;
+            std::vector<std::string> strategies;
+            int num_games = 0;
+            int max_turns = 0;
+
+            if (!cmdproc->parseTournamentCommand(line, maps, strategies, num_games, max_turns)) {
+                std::cout << "Invalid tournament command. Usage: tournament -M <listofmapfiles> -P <listofplayerstrategies> -G <numberofgames> -D <maxnumberofturns>\n";
+                continue;
+            }
+
+            if (!runTournament(maps, strategies, num_games, max_turns)) {
+                std::cout << "Tournament execution failed. Check map files and strategy names.\n";
+            }
+            continue;
+
         // ---- gamestart -------------------------------------------------
         } else if (cmd == "gamestart") {
             if (*currentState != PlayersAdded) {
@@ -542,7 +660,7 @@ void GameEngine::startupPhase() {
             }
 
             std::cout << "\n--- gamestart ---\n";
-
+            
             // (a) Fairly distribute all territories round-robin
             std::cout << "\n(a) Distributing territories...\n";
             {
@@ -561,47 +679,6 @@ void GameEngine::startupPhase() {
                     std::cout << "  " << *p->getName() << ": "
                               << p->getTerritories()->size() << " territories\n";
             }
-
-            // (b) Randomise order of play
-            std::cout << "\n(b) Randomising play order...\n";
-            {
-                std::mt19937 rng2(std::random_device{}());
-                std::shuffle(players->begin(), players->end(), rng2);
-                std::cout << "  Order: ";
-                for (size_t i = 0; i < players->size(); ++i) {
-                    std::cout << *(*players)[i]->getName();
-                    if (i + 1 < players->size()) std::cout << " -> ";
-                }
-                std::cout << "\n";
-            }
-
-            // (c) Give each player 50 initial armies
-            std::cout << "\n(c) Granting 50 armies to each player...\n";
-            for (Player* p : *players) {
-                p->setReinforcementPool(50);
-                std::cout << "  " << *p->getName() << " pool: 50\n";
-            }
-
-            // (d) Deal each player 2 cards from the shared deck
-            std::cout << "\n(d) Dealing 2 cards to each player...\n";
-            for (Player* p : *players) {
-                if (deck->getNumCards() >= 2) {
-                    deck->draw(p->getHand());
-                    deck->draw(p->getHand());
-                }
-                std::cout << "  " << *p->getName()
-                          << " hand: " << *p->getHand() << "\n";
-            }
-
-            // (e) Switch to play phase
-            std::cout << "\n(e) Switching to play phase...\n";
-            setState(AssignReinforcement);
-
-            std::cout << "\n----- Startup complete - game begins! -----\n";
-            std::cout << *this << "\n\n";
-            return;   // exit the startup loop
-
-        // ---- unknown command -------------------------------------------
         } else {
             std::cout << "Unknown command: '" << cmd
                       << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";

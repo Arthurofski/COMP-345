@@ -138,6 +138,51 @@ string CommandProcessor::getCommand(GameEngine* ge) {
 	return readCommand(ge);
 }
 
+bool CommandProcessor::parseTournamentCommand(const string& cmd_input,
+    vector<string>& maps,
+    vector<string>& strategies,
+    int& num_games,
+    int& max_turns) {
+
+    maps.clear();
+    strategies.clear();
+    num_games = 0;
+    max_turns = 0;
+
+    std::istringstream iss(cmd_input);
+    string cmd;
+    iss >> cmd;
+    if (cmd != "tournament")
+        return false;
+
+    string token;
+    string current_flag = "";
+    while (iss >> token) {
+        if (token == "-M" || token == "-P" || token == "-G" || token == "-D") {
+            current_flag = token;
+        } else {
+            if (current_flag == "-M") {
+                maps.push_back(token);
+            } else if (current_flag == "-P") {
+                strategies.push_back(token);
+            } else if (current_flag == "-G") {
+                try { num_games = stoi(token); } catch (...) { return false; }
+            } else if (current_flag == "-D") {
+                try { max_turns = stoi(token); } catch (...) { return false; }
+            } else {
+                return false;
+            }
+        }
+    }
+
+    if (maps.size() < 1 || maps.size() > 5) return false;
+    if (strategies.size() < 2 || strategies.size() > 4) return false;
+    if (num_games < 1 || num_games > 5) return false;
+    if (max_turns < 10 || max_turns > 50) return false;
+
+    return true;
+}
+
 // Validates a command based on whether it exists and if it can be used in the current game state
 bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 	string state = ge->getCurrentState();
@@ -159,39 +204,11 @@ bool CommandProcessor::validate(string cmd_input, GameEngine* ge)  {
 	if (cmd == "quit" && state == "Win")
 		return true;
 	if (cmd == "tournament" && state == "Start") {
-		
-		// tournament -M <listofmapfiles> -P <listofplayerstrategies> -G <numberofgames> -D <maxnumberofturns>
-		string token;
 		vector<string> maps;
 		vector<string> strategies;
 		int num_games = 0;
 		int max_turns = 0;
-
-		string current_flag = "";
-		while (iss >> token) {
-			if (token == "-M" || token == "-P" || token == "-G" || token == "-D") {
-				current_flag = token;
-			} else {
-				if (current_flag == "-M") {
-					maps.push_back(token);
-				} else if (current_flag == "-P") {
-					strategies.push_back(token);
-				} else if (current_flag == "-G") {
-					try { num_games = stoi(token); } catch (...) { return false; }
-				} else if (current_flag == "-D") {
-					try { max_turns = stoi(token); } catch (...) { return false; }
-				} else {
-					return false; 
-				}
-			}
-		}
-
-		if (maps.size() < 1 || maps.size() > 5) return false;
-		if (strategies.size() < 2 || strategies.size() > 4) return false;
-		if (num_games < 1 || num_games > 5) return false;
-		if (max_turns < 10 || max_turns > 50) return false;
-
-		return true;
+		return parseTournamentCommand(cmd_input, maps, strategies, num_games, max_turns);
 	}
 		
 	return false;

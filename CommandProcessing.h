@@ -42,8 +42,11 @@ public:
     friend ostream& operator<<(ostream& os, const CommandProcessor& cp);
 	string getCommand(GameEngine* ge);
 	bool validate(string cmd_input, GameEngine* ge);
-	void saveCommand(Command* new_cmd);
-	std::string stringToLog() const override;
+	bool parseTournamentCommand(const std::string& cmd_input,
+	    std::vector<std::string>& maps,
+	    std::vector<std::string>& strategies,
+	    int& num_games,
+	    int& max_turns);
 };
 
 class FileLineReader {

@@ -1,33 +1,50 @@
-Effect: Map loaded successfully
-GameEngine transitioned to State: MapLoaded
-Order Issued and added to list
-Order executed: Deploy
 Tournament mode:
-M: map1.map, map2.map
-P: Aggressive, Defensive, Benevolent
-G: 2
-D: 20
-Results:
-Tournament mode:
-M: map1.map, map2.map
-P: Aggressive, Defensive, Benevolent
-G: 2
-D: 20
-Results:
-Tournament mode:
-M: solar.map
-P: Aggressive, Defensive
-G: 2
-D: 20
-Results:
-Map 1: solar.map
-Tournament mode:
-M: solar.map
+M: solar.map, canada.map
 P: Aggressive, Benevolent
 G: 2
-D: 20
+D: 10
 Results:
 Map 1: solar.map
+Game 1: Draw
+Game 2: Draw
+Map 2: canada.map
+Game 1: Draw
+Game 2: Draw
+
+Tournament mode:
+M: solar.map, canada.map, caribbean.map, Chrono_Trigger.map, sudamerica.map
+P: Aggressive, Benevolent
+G: 2
+D: 10
+Results:
+Map 1: solar.map
+Game 1: Draw
+Game 2: Draw
+Map 2: canada.map
+Game 1: Draw
+Game 2: Draw
+Map 3: caribbean.map
+Game 1: Draw
+Game 2: Draw
+Tournament mode:
+M: europe.map, sudamerica.map, caribbean.map, canada.map, solar.map
+P: Aggressive, Benevolent
+G: 2
+D: 10
+Results:
+Map 1: europe.map
+Game 1: Draw
+Game 2: Draw
+Map 2: sudamerica.map
+Game 1: Draw
+Game 2: Draw
+Map 3: caribbean.map
+Game 1: Draw
+Game 2: Draw
+Map 4: canada.map
+Game 1: Draw
+Game 2: Draw
+Map 5: solar.map
 Game 1: Draw
 Game 2: Draw
 

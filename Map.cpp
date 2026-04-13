@@ -357,16 +357,17 @@ ostream& operator<<(ostream& os, const Map& m) {
 
 // Creates a map from a .map file
 Map* MapLoader::load(string filename) {
-    Map* gamemap = new Map();
     enum Mode { NONE, CONTINENTS, TERRITORIES, BORDERS };
     Mode current = NONE;
     map<int, Territory*> terr_ids;
 
     ifstream file(filename);
     if (!file) {
-        cout << "Cannot open file." << endl;
-        return gamemap;
+        cout << "Cannot open map file: " << filename << endl;
+        return nullptr;
     }
+
+    Map* gamemap = new Map();
 
     // switches modes when encountering a new "section" in the .map file 
     string line;

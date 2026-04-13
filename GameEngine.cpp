@@ -728,6 +728,10 @@ void GameEngine::startupPhase() {
                     std::cout << "  " << *p->getName() << ": "
                               << p->getTerritories()->size() << " territories\n";
             }
+
+            setState(AssignReinforcement);
+            std::cout << "\nEntering main game loop...\n";
+            mainGameLoop();
         } else {
             std::cout << "Unknown command: '" << cmd
                       << "'. Valid: loadmap, validatemap, addplayer, gamestart\n";

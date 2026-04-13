@@ -263,9 +263,16 @@ int main() {
 
     // Give Alice fresh armies to deploy
     alice->setReinforcementPool(4);
+
+    deck->draw(alice->getHand());  // Give Alice a card to optionally play
+    deck->draw(alice->getHand());
+    deck->draw(alice->getHand());
+
     cout << "Alice (Human) will now issue orders interactively.\n";
     cout << "(Deploy phase first, then you can issue Advance orders.\n";
     cout << " Type 'd' at the Advance prompt when done.)\n\n";
+
+
 
     alice->issueOrder(deck);
 

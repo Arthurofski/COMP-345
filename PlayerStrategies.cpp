@@ -21,7 +21,7 @@ static int readInt(const string& prompt, int lo, int hi) {
     while (true) {
         cout << prompt;
         if (cin >> v && v >= lo && v <= hi) { flushCin(); return v; }
-        cout << "  Invalid – enter a number between " << lo << " and " << hi << ".\n";
+        cout << "  Invalid - enter a number between " << lo << " and " << hi << ".\n";
         flushCin();
     }
 }
@@ -43,30 +43,29 @@ void HumanPlayerStrategy::issueOrder(Player* player, Deck* deck) {
     if (player->getReinforcementPool() > 0) {
         vector<Territory*>* defend = toDefend(player);
 
-        cout << "\n╔══ DEPLOY (" << *player->getName() << ") ══\n";
-        cout << "║  Reinforcement pool: " << player->getReinforcementPool() << " armies\n";
-        cout << "║  Your territories:\n";
+        cout << "\nDEPLOY (" << *player->getName() << ")\n";
+        cout << "Reinforcement pool: " << player->getReinforcementPool() << " armies\n";
+        cout << "Your territories:\n";
         for (int i = 0; i < (int)defend->size(); ++i)
-            cout << "║    [" << i << "] " << defend->at(i)->getName()
+            cout << " [" << i << "] " << defend->at(i)->getName()
                  << "  (" << *defend->at(i)->armies << " armies)\n";
 
-        int choice = readInt("╚► Deploy all armies to territory: ",
+        int choice = readInt("Deploy all armies to territory: ",
                              0, (int)defend->size() - 1);
 
         Territory* target = defend->at(choice);
         int pool = player->getReinforcementPool();
         player->getOrders()->add(new Deploy(pool, player, target));
         player->setReinforcementPool(0);
-        cout << "  ✓ Deploy queued: " << pool << " → " << target->getName() << "\n";
+        cout << "Deploy queued: " << pool << " ==> " << target->getName() << "\n";
         delete defend;
     }
 
     // ── Step 2: Advance orders (loop until 'd') ───────────────────────────────
     while (true) {
-        cout << "\n╔══ ADVANCE (" << *player->getName() << ") ══\n";
-        cout << "║  [y] issue Advance   [d] done\n";
+        cout << "\nADVANCE (" << *player->getName() << ")\n";
+        cout << "[y] issue Advance   [d] done\n";
         char ans;
-        cout << "╚► ";
         cin >> ans; flushCin();
 
         if (ans == 'd' || ans == 'D') break;
@@ -92,39 +91,53 @@ void HumanPlayerStrategy::issueOrder(Player* player, Deck* deck) {
             cout << "  " << source->getName() << " has no neighbours.\n";
             continue;
         }
-        cout << "\n  Neighbours of " << source->getName() << ":\n";
+        cout << "\nNeighbours of " << source->getName() << ":\n";
         for (int i = 0; i < (int)nbrs.size(); ++i) {
             string owner = nbrs[i]->owner ? *nbrs[i]->owner->getName() : "Nobody";
             cout << "    [" << i << "] " << nbrs[i]->getName()
                  << "  owner: " << owner
                  << "  armies: " << *nbrs[i]->armies << "\n";
         }
-        int dstIdx = readInt("  Destination [0-" + to_string((int)nbrs.size()-1) + "]: ",
+        int dstIdx = readInt("Destination [0-" + to_string((int)nbrs.size()-1) + "]: ",
                              0, (int)nbrs.size()-1);
         Territory* dest = nbrs[dstIdx];
 
         int maxA = *source->armies - 1;
-        if (maxA <= 0) { cout << "  Not enough armies to advance.\n"; continue; }
+        if (maxA <= 0) { cout << "Not enough armies to advance.\n"; continue; }
 
-        int num = readInt("  Armies to advance [1-" + to_string(maxA) + "]: ", 1, maxA);
+        int num = readInt("Armies to advance [1-" + to_string(maxA) + "]: ", 1, maxA);
         player->getOrders()->add(new Advance(num, player, source, dest));
-        cout << "  ✓ Advance queued: " << num << "  "
-             << source->getName() << " → " << dest->getName() << "\n";
+        cout << "Advance queued: " << num << "  "
+             << source->getName() << " ==> " << dest->getName() << "\n";
     }
 
-    // ── Step 3: Optionally play a card ────────────────────────────────────────
-    if (player->getHand()->getNumCards() > 0) {
-        cout << "\n╔══ CARD (" << *player->getName() << ") ══\n";
-        cout << "║  Hand: " << *player->getHand() << "\n";
-        cout << "║  Play a card? [y/n]\n╚► ";
-        char ans; cin >> ans; flushCin();
-        if (ans == 'y' || ans == 'Y') {
-            Cards* card = player->getHand()->getCard(0);
-            if (card) {
-                card->play(player->getHand(), deck, player);
-                cout << "  ✓ Card played.\n";
-            }
+    // ── Step 3: Play cards ───────────────────────────────────────────────────
+    while (player->getHand()->getNumCards() > 0) {
+        int numCards = player->getHand()->getNumCards();
+
+        cout << "\nCARDS (" << *player->getName() << ")\n";
+        cout << "Your hand:\n";
+        for (int i = 0; i < numCards; ++i) {
+            Cards* c = player->getHand()->getCard(i);
+            cout << "[" << i << "] " << *c << "\n";
         }
+        cout << "Play a card? [y] yes   [n] skip cards\n";
+        char ans;
+        cin >> ans; flushCin();
+
+        if (ans != 'y' && ans != 'Y') break;
+
+        // Ask which card to play
+        int idx = readInt("  Which card [0-" + to_string(numCards - 1) + "]: ",
+                          0, numCards - 1);
+        Cards* card = player->getHand()->getCard(idx);
+        if (!card) { cout << "  Invalid card.\n"; continue; }
+
+        // Cards::play() handles: creating the order, adding it to the
+        // player's order list, removing the card from hand, returning
+        // it to the deck.
+        card->play(player->getHand(), deck, player);
+        cout << "Card played. Orders updated.\n";
     }
 }
 
@@ -203,7 +216,7 @@ void AggressivePlayerStrategy::issueOrder(Player* player, Deck* deck) {
         player->getOrders()->add(new Deploy(amount, player, strongest));
         player->setReinforcementPool(0);
         cout << "[" << *player->getName() << " (Aggressive)] Deploy "
-             << amount << " → " << strongest->getName() << "\n";
+             << amount << " ==> " << strongest->getName() << "\n";
     }
 
     // Advance from EVERY owned territory to all its adjacent enemies.
@@ -216,14 +229,14 @@ void AggressivePlayerStrategy::issueOrder(Player* player, Deck* deck) {
                 // Neutral player becomes Aggressive when targeted
                 if (nb->owner && nb->owner->getStrategy()->strategyName() == "Neutral") {
                     cout << "[Game] " << *nb->owner->getName()
-                         << " is being attacked — switching Neutral → Aggressive!\n";
+                         << " is being attacked — switching Neutral ==> Aggressive!\n";
                     nb->owner->setStrategy(new AggressivePlayerStrategy());
                 }
                 int armies = *source->armies - 1;
                 player->getOrders()->add(new Advance(armies, player, source, nb));
                 cout << "[" << *player->getName() << " (Aggressive)] Advance "
                      << armies << "  " << source->getName()
-                     << " → " << nb->getName() << "\n";
+                     << " ==> " << nb->getName() << "\n";
             }
         }
     }
@@ -277,7 +290,7 @@ void BenevolentPlayerStrategy::issueOrder(Player* player, Deck* deck) {
         player->getOrders()->add(new Deploy(amount, player, weakest));
         player->setReinforcementPool(0);
         cout << "[" << *player->getName() << " (Benevolent)] Deploy "
-             << amount << " → " << weakest->getName() << "\n";
+             << amount << " ==> " << weakest->getName() << "\n";
     }
 
     // Reinforce weakest from friendly neighbours
@@ -291,7 +304,7 @@ void BenevolentPlayerStrategy::issueOrder(Player* player, Deck* deck) {
                         player->getOrders()->add(new Advance(armies, player, nb, weakest));
                         cout << "[" << *player->getName() << " (Benevolent)] Reinforce "
                              << armies << "  " << nb->getName()
-                             << " → " << weakest->getName() << "\n";
+                             << " ==> " << weakest->getName() << "\n";
                     }
                 }
             }
@@ -343,11 +356,6 @@ vector<Territory*>* NeutralPlayerStrategy::toDefend(Player* player) {
 // CheaterPlayerStrategy
 // =============================================================================
 
-/**
- * Instantly takes ownership of every territory adjacent to the player's
- * territories — no battle, no orders needed. Only fires once per turn
- * because the game engine calls issueOrder() once per player per turn.
- */
 void CheaterPlayerStrategy::issueOrder(Player* player, Deck* deck) {
     if (!player) return;
 
@@ -395,13 +403,6 @@ vector<Territory*>* CheaterPlayerStrategy::toDefend(Player* player) {
 
 // =============================================================================
 // Copy constructors, assignment operators, stream insertion operators
-//
-// These strategy classes hold NO data members — all behaviour is stateless
-// and driven entirely by the Player* passed into each method.  The copy
-// constructor and assignment operator therefore have nothing to copy; they
-// exist only to satisfy the assignment's design requirements.
-// The stream insertion operator prints the strategy name.
-// =============================================================================
 
 // ── Base class stream insertion ───────────────────────────────────────────────
 ostream& operator<<(ostream& os, const PlayerStrategy& ps) {
